@@ -1,5 +1,5 @@
 import { useStore } from '../store';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal, RotateCcw, RotateCw } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export default function Player() {
@@ -266,7 +266,7 @@ export default function Player() {
           {/* Playback Controls */}
           <div className="flex items-center space-x-4">
             <button onClick={handleSkipBack} className="text-gray-400 hover:text-white transition" title="-10s">
-              <SkipBack className="w-5 h-5" />
+              <RotateCcw className="w-5 h-5" />
             </button>
             <button onClick={handlePreviousTrack} className="text-gray-400 hover:text-white transition" title="Previous track">
               <SkipBack className="w-5 h-5" />
@@ -281,7 +281,7 @@ export default function Player() {
               <SkipForward className="w-5 h-5" />
             </button>
             <button onClick={handleSkipForward} className="text-gray-400 hover:text-white transition" title="+10s">
-              <SkipForward className="w-5 h-5" />
+              <RotateCw className="w-5 h-5" />
             </button>
           </div>
 
