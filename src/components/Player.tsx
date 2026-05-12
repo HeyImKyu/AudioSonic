@@ -63,6 +63,7 @@ export default function Player() {
       // Set store currentTime to cumulative time, but audio element to 0
       setCurrentTime(trackStartTime);
       audioRef.current.currentTime = 0;
+      setPlaying(true);
       audioRef.current.play().catch(console.error);
     }
   };
@@ -233,7 +234,7 @@ export default function Player() {
                   key={index}
                   onClick={() => handleChapterClick(index)}
                   className="absolute top-0 w-1 h-3 bg-purple-500 cursor-pointer hover:bg-purple-400 transition-colors z-10"
-                  style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                  style={{ left: `calc(${position}% * (100% - 16px) / 100% + 6px)` }}
                   title={`Track ${index + 1}: ${track.metadata?.filename || 'Unknown'}`}
                 />
               );
