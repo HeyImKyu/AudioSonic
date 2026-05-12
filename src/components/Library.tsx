@@ -65,31 +65,38 @@ export default function Library() {
       setCurrentLibraryItem(item);
       const response = await invoke('play_item', { libraryItemId: item.id, episodeId: null }) as any;
       console.log('Play response:', response);
-      console.log('Content URL:', response.contentUrl);
-      console.log('Server URL:', serverUrl);
-      console.log('Token:', token);
       
-      if (response.contentUrl) {
-        // The contentUrl might be relative, so we need to construct the full URL
-        let fullUrl = response.contentUrl.startsWith('http') 
-          ? response.contentUrl 
-          : `${serverUrl}${response.contentUrl}`;
+      // Handle audioTracks field
+      if (response.audioTracks && response.audioTracks.length > 0) {
+        const firstTrack = response.audioTracks[0];
+        console.log('Content URL:', firstTrack.contentUrl);
+        console.log('Server URL:', serverUrl);
+        console.log('Token:', token);
         
-        // Append token as query parameter for authentication
-        if (token && !fullUrl.includes('token=')) {
-          const separator = fullUrl.includes('?') ? '&' : '?';
-          fullUrl = `${fullUrl}${separator}token=${token}`;
+        if (firstTrack.contentUrl) {
+          // The contentUrl might be relative, so we need to construct the full URL
+          let fullUrl = firstTrack.contentUrl.startsWith('http') 
+            ? firstTrack.contentUrl 
+            : `${serverUrl}${firstTrack.contentUrl}`;
+          
+          // Append token as query parameter for authentication
+          if (token && !fullUrl.includes('token=')) {
+            const separator = fullUrl.includes('?') ? '&' : '?';
+            fullUrl = `${fullUrl}${separator}token=${token}`;
+          }
+          
+          console.log('Full audio URL with token:', fullUrl);
+          setAudioUrl(fullUrl);
         }
         
-        console.log('Full audio URL with token:', fullUrl);
-        setAudioUrl(fullUrl);
+        if (firstTrack.duration) {
+          setDuration(firstTrack.duration);
+        }
+        
+        setPlaying(true);
+      } else {
+        console.error('No audioTracks in play response');
       }
-      
-      if (response.duration) {
-        setDuration(response.duration);
-      }
-      
-      setPlaying(true);
     } catch (error) {
       console.error('Failed to play item:', error);
     }

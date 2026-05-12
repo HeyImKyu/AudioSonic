@@ -73,12 +73,24 @@ async fn play_item(
 ) -> Result<PlayResponse, String> {
     println!("play_item called with library_item_id: {}, episode_id: {:?}", library_item_id, episode_id);
     let result = client
-        .play_item(&library_item_id, episode_id)
+        .play_item(&library_item_id, episode_id.as_deref())
         .await;
     
     match &result {
-        Ok(response) => println!("Play response successful: {:?}", response),
-        Err(e) => println!("Play response error: {}", e),
+        Ok(response) => {
+            println!("Play response successful");
+            println!("Response library_item_id: {:?}", response.library_item_id);
+            println!("Response episode_id: {:?}", response.episode_id);
+            println!("Response audio_tracks count: {}", response.audio_tracks.len());
+            if let Some(first_track) = response.audio_tracks.first() {
+                println!("First track content_url: {}", first_track.content_url);
+                println!("First track duration: {}", first_track.duration);
+            }
+        },
+        Err(e) => {
+            println!("Play response error: {}", e);
+            println!("Error details: {:?}", e);
+        },
     }
     
     result.map_err(|e| e.to_string())
@@ -187,13 +199,15 @@ async fn get_audio_stream(
     episode_id: Option<String>,
 ) -> Result<String, String> {
     let play_response = client
-        .play_item(&library_item_id, episode_id)
+        .play_item(&library_item_id, episode_id.as_deref())
         .await
         .map_err(|e| e.to_string())?;
     
-    play_response.media.tracks.get(0)
-        .map(|track| track.content_url.clone())
-        .ok_or("No tracks in play response".to_string())
+    if let Some(track) = play_response.audio_tracks.first() {
+        return Ok(track.content_url.clone());
+    }
+    
+    Err("No tracks in play response".to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

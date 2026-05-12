@@ -149,53 +149,43 @@ impl AudiobookshelfClient {
         Ok(item)
     }
 
-    pub async fn play_item(&self, library_item_id: &str, episode_id: Option<String>) -> Result<PlayResponse> {
-        let base_url = self.base_url.read().await;
-        let url = if let Some(ep_id) = episode_id {
-            format!("{}/api/items/{}/play/{}", base_url, library_item_id, ep_id)
-        } else {
-            format!("{}/api/items/{}/play", base_url, library_item_id)
-        };
+    pub async fn play_item(&self, library_item_id: &str, episode_id: Option<&str>) -> Result<PlayResponse> {
+        let url = format!("{}/api/items/{}/play", self.base_url.read().await, library_item_id);
         
-        println!("Play URL: {}", url);
-
-        let play_request = PlayRequest {
+        if let Some(ep_id) = episode_id {
+            let url = format!("{}/{}", url, ep_id);
+        }
+        
+        let request_body = PlayRequest {
             device_info: DeviceInfo {
-                client_version: env!("CARGO_PKG_VERSION").to_string(),
-                manufacturer: Some("AudioSonic".to_string()),
-                model: Some("Desktop".to_string()),
                 client_name: Some("AudioSonic".to_string()),
-                device_id: Some(uuid::Uuid::new_v4().to_string()),
+                client_version: "0.0.1".to_string(),
+                device_id: Some("audio-sonic-device".to_string()),
+                manufacturer: Some("AudioSonic".to_string()),
+                model: Some("Desktop Client".to_string()),
             },
-            supported_mime_types: vec![
-                "audio/mpeg".to_string(),
-                "audio/mp4".to_string(),
-                "audio/flac".to_string(),
-                "audio/ogg".to_string(),
-                "audio/wav".to_string(),
-            ],
+            supported_mime_types: vec!["audio/flac".to_string(), "audio/mpeg".to_string(), "audio/mp4".to_string()],
             direct_play: Some(true),
         };
-
-        println!("Play request: {:?}", play_request);
-
-        let response = self.client
+        
+        let token = self.token.read().await;
+        let token_str = token.as_ref().ok_or_else(|| anyhow::anyhow!("No token set"))?;
+        let response = self
+            .client
             .post(&url)
-            .headers(self.get_headers().await?)
-            .json(&play_request)
+            .header("Authorization", format!("Bearer {}", token_str))
+            .json(&request_body)
             .send()
-            .await
-            .context("Failed to send play request")?;
+            .await?;
 
         let status = response.status();
-        let response_text = response.text().await.context("Failed to get response text")?;
+        let response_text = response.text().await?;
         
         println!("Play response status: {}", status);
-        println!("Play response body: {}", response_text);
+        println!("Play response body (first 500 chars): {}", &response_text.chars().take(500).collect::<String>());
 
-        let play_response: PlayResponse = serde_json::from_str(&response_text)
-            .context("Failed to parse play response")?;
-
+        let play_response: PlayResponse = serde_json::from_str(&response_text)?;
+        
         Ok(play_response)
     }
 

@@ -263,29 +263,61 @@ pub struct DeviceInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayResponse {
+    pub id: String,
+    #[serde(rename = "userId")]
+    pub user_id: String,
+    #[serde(rename = "libraryId")]
+    pub library_id: String,
     #[serde(rename = "libraryItemId")]
     pub library_item_id: String,
+    #[serde(rename = "bookId")]
+    pub book_id: Option<String>,
     #[serde(rename = "episodeId")]
     pub episode_id: Option<String>,
-    pub media: PlayMedia,
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+    #[serde(rename = "mediaMetadata")]
+    pub media_metadata: serde_json::Value,
     #[serde(default)]
-    pub library_files: Option<Vec<LibraryFile>>,
+    pub chapters: Vec<PlayChapter>,
+    #[serde(rename = "displayTitle")]
+    pub display_title: String,
+    #[serde(rename = "displayAuthor")]
+    pub display_author: String,
+    #[serde(rename = "coverPath")]
+    pub cover_path: Option<String>,
+    pub duration: f64,
+    #[serde(rename = "playMethod")]
+    pub play_method: i32,
+    #[serde(rename = "mediaPlayer")]
+    pub media_player: String,
+    #[serde(rename = "deviceInfo")]
+    pub device_info: DeviceInfo,
+    #[serde(rename = "serverVersion")]
+    pub server_version: String,
     #[serde(default)]
-    pub size: Option<i64>,
+    #[serde(rename = "audioTracks")]
+    pub audio_tracks: Vec<PlayTrack>,
+    #[serde(default)]
+    #[serde(rename = "videoTrack")]
+    pub video_track: Option<serde_json::Value>,
+    #[serde(default)]
+    #[serde(rename = "libraryItem")]
+    pub library_item: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayTrackMetadata {
     pub filename: String,
     pub ext: String,
-    #[serde(rename = "mimeType")]
-    pub mime_type: String,
+    #[serde(rename = "mimeType", default)]
+    pub mime_type: Option<String>,
     #[serde(default)]
     pub path: Option<String>,
     #[serde(rename = "relPath", default)]
     pub rel_path: Option<String>,
     #[serde(default)]
-    pub size: Option<i64>,
+    pub ino: Option<String>,
     #[serde(rename = "mtimeMs", default)]
     pub mtime_ms: Option<i64>,
     #[serde(rename = "ctimeMs", default)]
@@ -338,8 +370,6 @@ pub struct PlayTrackMetadata {
     pub start_offset: Option<f64>,
     #[serde(rename = "contentUrl", default)]
     pub content_url: Option<String>,
-    #[serde(default)]
-    pub ino: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
