@@ -443,6 +443,11 @@ pub struct CreateBookmarkRequest {
     pub title: String,
 }
 
+pub struct AddToCollectionRequest {
+    pub collection_id: String,
+    pub library_item_id: String,
+}
+
 // ==================== SEARCH ====================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
