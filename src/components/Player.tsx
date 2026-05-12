@@ -250,7 +250,9 @@ export default function Player() {
         networkState: audioRef.current.networkState
       });
       setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration);
+      // Calculate total duration of all tracks
+      const totalDuration = audioTracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+      setDuration(totalDuration);
     }
   };
 
@@ -289,7 +291,7 @@ export default function Player() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-glass-dark backdrop-blur-xl border-t border-glass-200 p-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-xl border-t border-border">
       <audio
         ref={audioRef}
         src={audioUrl || undefined}
@@ -298,35 +300,48 @@ export default function Player() {
         onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleNextTrack}
+        onError={handleError}
+        onLoadedMetadata={handleLoadedMetadata}
       />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         {/* Progress Bar with Chapters */}
-        <div className="mb-4">
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            value={currentTime}
-            onChange={handleSeek}
-            className="w-full h-2 bg-purple-900 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:bg-purple-900 [&::-webkit-slider-runnable-track]:rounded-lg"
-          />
-          {/* Chapter markers */}
-          <div className="relative h-4 -mt-2">
-            {audioTracks.map((track, index) => {
-              const trackStartTime = calculateTrackStartTime(index);
-              const position = (trackStartTime / duration) * 100;
-              return (
-                <div
-                  key={index}
-                  onClick={() => handleChapterClick(index)}
-                  className="absolute top-0 w-1 h-3 bg-purple-500 cursor-pointer hover:bg-purple-400 transition-colors z-10"
-                  style={{ left: `calc(${position}% * (100% - 16px) / 100% + 6px)` }}
-                  title={`Track ${index + 1}: ${track.metadata?.filename || 'Unknown'}`}
-                />
-              );
-            })}
+        <div className="mb-3">
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #ff6b35 0%, #ff6b35 ${(currentTime / duration) * 100}%, #4a5568 ${(currentTime / duration) * 100}%, #4a5568 100%)`
+              }}
+            />
+            {/* Chapter markers underneath */}
+            <div className="relative h-2 mt-1">
+              {audioTracks.map((track, index) => {
+                const trackStartTime = calculateTrackStartTime(index);
+                const position = (trackStartTime / duration) * 100;
+                // Skip markers that would be too close to each other (less than 2% apart)
+                if (index > 0) {
+                  const prevTrackStartTime = calculateTrackStartTime(index - 1);
+                  const prevPosition = (prevTrackStartTime / duration) * 100;
+                  if (position - prevPosition < 2) return null;
+                }
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleChapterClick(index)}
+                    className="absolute top-0 w-0.5 h-2 bg-white/40 cursor-pointer hover:bg-white/60 transition-colors z-10"
+                    style={{ left: `calc(${position}% * (100% - 16px) / 100% + 6px)` }}
+                    title={`Chapter ${index + 1}`}
+                  />
+                );
+              })}
+            </div>
           </div>
-          <div className="flex justify-between text-xs text-white mt-1">
+          <div className="flex justify-between text-xs text-text-secondary mt-1">
             <span>{formatTimeHHMMSS(currentTime)}</span>
             <span>{formatTimeHHMMSS(duration)}</span>
           </div>
@@ -335,49 +350,72 @@ export default function Player() {
         {/* Controls */}
         <div className="flex items-center justify-between">
           {/* Track Info */}
-          <div className="flex items-center space-x-4 flex-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-lg flex items-center justify-center relative overflow-hidden">
+          <div className="flex items-center space-x-4 flex-1 min-w-0">
+            <div className="w-14 h-14 bg-surface rounded-lg flex items-center justify-center relative overflow-hidden shadow-glass">
               {getCoverUrl() ? (
                 <img
-                  src={getCoverUrl()}
-                  alt={currentLibraryItem?.media.metadata.title || 'Cover'}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
+                  src={getCoverUrl() || undefined}
+                  alt={currentLibraryItem?.media.metadata.title || 'Cover'}
                 />
               ) : (
-                <span className="text-white font-bold">🎧</span>
+                <span className="text-2xl">🎧</span>
               )}
             </div>
-            <div className="overflow-hidden">
-              <h3 className="text-white font-semibold truncate">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-text font-semibold truncate">
                 {currentLibraryItem?.media.metadata.title || 'No track selected'}
               </h3>
-              <p className="text-gray-400 text-sm truncate">
+              <p className="text-text-secondary text-sm truncate">
                 {currentLibraryItem?.media.metadata.authorName || 'Unknown author'}
               </p>
+              {audioTracks.length > 1 && (
+                <p className="text-text-muted text-xs">
+                  Track {currentTrackIndex + 1} of {audioTracks.length}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Playback Controls */}
-          <div className="flex items-center space-x-4">
-            <button onClick={handlePreviousTrack} className="text-gray-400 hover:text-white transition" title="Previous track">
+          <div className="flex items-center space-x-2 px-8">
+            <button 
+              onClick={handlePreviousTrack} 
+              className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg" 
+              title="Previous track"
+              disabled={currentTrackIndex === 0}
+            >
               <SkipBack className="w-5 h-5" />
             </button>
-            <button onClick={handleSkipBack} className="text-gray-400 hover:text-white transition" title="-10s">
+            <button 
+              onClick={handleSkipBack} 
+              className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg" 
+              title="-10s"
+            >
               <RotateCcw className="w-5 h-5" />
             </button>
             <button
               onClick={handlePlayPause}
-              className="w-12 h-12 bg-gradient-to-r from-accent-primary to-accent-secondary rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+              className="w-12 h-12 bg-primary hover:bg-primary-hover text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg"
             >
-              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
             </button>
-            <button onClick={handleSkipForward} className="text-gray-400 hover:text-white transition" title="+10s">
+            <button 
+              onClick={handleSkipForward} 
+              className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg" 
+              title="+10s"
+            >
               <RotateCw className="w-5 h-5" />
             </button>
-            <button onClick={handleNextTrack} className="text-gray-400 hover:text-white transition" title="Next track">
+            <button 
+              onClick={handleNextTrack} 
+              className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg" 
+              title="Next track"
+              disabled={currentTrackIndex === audioTracks.length - 1}
+            >
               <SkipForward className="w-5 h-5" />
             </button>
           </div>
@@ -385,7 +423,10 @@ export default function Player() {
           {/* Volume & Extra Controls */}
           <div className="flex items-center space-x-4 flex-1 justify-end">
             <div className="flex items-center space-x-2">
-              <button onClick={toggleMute} className="text-gray-400 hover:text-white transition">
+              <button 
+                onClick={toggleMute} 
+                className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg"
+              >
                 {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
               <input
@@ -395,33 +436,105 @@ export default function Player() {
                 step="0.01"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="w-24 h-2 bg-glass-200 rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                className="w-24 h-1.5 bg-surface-hover rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${volume * 100}%, var(--color-surface-hover) ${volume * 100}%, var(--color-surface-hover) 100%)`
+                }}
               />
             </div>
             <div className="relative">
               <button 
                 onClick={() => setShowMenu(!showMenu)}
-                className="text-gray-400 hover:text-white transition"
+                className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg"
               >
                 <MoreHorizontal className="w-5 h-5" />
               </button>
               {showMenu && (
-                <div className="absolute bottom-full right-0 mb-2 bg-glass-dark backdrop-blur-xl border border-glass-200 rounded-lg p-2 w-48">
-                  <button className="w-full text-left px-3 py-2 text-white hover:bg-glass-200 rounded transition text-sm">
-                    Playback Speed
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-white hover:bg-glass-200 rounded transition text-sm">
-                    Skip Silence
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-white hover:bg-glass-200 rounded transition text-sm">
-                    Show Queue
-                  </button>
-                </div>
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute bottom-full right-0 mb-2 bg-surface border border-border rounded-lg shadow-glass p-2 w-48 z-20">
+                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
+                      Playback Speed: {playbackSpeed}x
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
+                      Skip Silence
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
+                      Audio Settings
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
+      
+      <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 0 10px rgba(255, 107, 53, 0.5), 0 2px 6px rgba(0,0,0,0.3);
+          border: 2px solid rgba(255,255,255,0.9);
+          transition: all 0.2s ease;
+        }
+        .slider::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 0 15px rgba(255, 107, 53, 0.7), 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          border-radius: 50%;
+          cursor: pointer;
+          border: 2px solid rgba(255,255,255,0.9);
+          box-shadow: 0 0 10px rgba(255, 107, 53, 0.5), 0 2px 6px rgba(0,0,0,0.3);
+          transition: all 0.2s ease;
+        }
+        .slider::-moz-range-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 0 15px rgba(255, 107, 53, 0.7), 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        /* Volume Slider */
+        input[type="range"]::-webkit-slider-thumb {
+          appearance: none;
+          width: 12px;
+          height: 12px;
+          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 0 6px rgba(255, 107, 53, 0.4), 0 1px 3px rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.8);
+          transition: all 0.2s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+          box-shadow: 0 0 10px rgba(255, 107, 53, 0.6), 0 1px 4px rgba(0,0,0,0.3);
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 12px;
+          height: 12px;
+          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          border-radius: 50%;
+          cursor: pointer;
+          border: 1px solid rgba(255,255,255,0.8);
+          box-shadow: 0 0 6px rgba(255, 107, 53, 0.4), 0 1px 3px rgba(0,0,0,0.2);
+          transition: all 0.2s ease;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+          transform: scale(1.15);
+          box-shadow: 0 0 10px rgba(255, 107, 53, 0.6), 0 1px 4px rgba(0,0,0,0.3);
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useStore } from './store';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Library from './components/Library';
 import Player from './components/Player';
+import QueuePanel from './components/QueuePanel';
+import ThemeSelector from './components/ThemeSelector';
 import './App.css';
 
 function App() {
@@ -44,16 +47,36 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      <DebugLog />
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 overflow-y-auto pb-24">
-          {renderContent()}
+    <ThemeProvider>
+      <div className="min-h-screen bg-background text-text" style={{ backdropFilter: 'var(--glass-blur)' }}>
+        <DebugLog />
+        <div className="flex h-screen">
+          <Sidebar />
+          <div className="flex-1 flex">
+            <div className="flex-1 overflow-y-auto pb-24">
+              <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center space-x-4">
+                    <h1 className="text-2xl font-bold text-text">
+                      {sidebarView === 'library' ? 'Library' : 
+                       sidebarView === 'collections' ? 'Collections' :
+                       sidebarView === 'playlists' ? 'Playlists' :
+                       sidebarView === 'search' ? 'Search' : 'Library'}
+                    </h1>
+                  </div>
+                  <ThemeSelector />
+                </div>
+              </div>
+              <div className="p-6">
+                {renderContent()}
+              </div>
+            </div>
+            <QueuePanel />
+          </div>
         </div>
+        <Player />
       </div>
-      <Player />
-    </div>
+    </ThemeProvider>
   );
 }
 
