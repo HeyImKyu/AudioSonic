@@ -1,11 +1,13 @@
 import { useStore } from '../store';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal, RotateCcw, RotateCw } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 export default function Player() {
-  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume } = useStore();
+  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const positionRestoredRef = useRef(false);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -25,6 +27,83 @@ export default function Player() {
       }
     }
   }, [isPlaying]);
+
+  // Restore audio element currentTime when audioUrl changes (for saved progress)
+  useEffect(() => {
+    if (audioUrl) {
+      positionRestoredRef.current = false;
+    }
+  }, [audioUrl]);
+
+  useEffect(() => {
+    if (audioRef.current && audioUrl && currentTime > 0 && audioTracks.length > 0 && !positionRestoredRef.current) {
+      const trackStartTime = calculateTrackStartTime(currentTrackIndex);
+      const timeInTrack = currentTime - trackStartTime;
+      console.log('Restoring audio position:', { currentTime, trackStartTime, timeInTrack, currentTrackIndex });
+      const restorePosition = () => {
+        if (audioRef.current && timeInTrack >= 0) {
+          audioRef.current.currentTime = timeInTrack;
+          positionRestoredRef.current = true;
+          console.log('Audio position restored to:', timeInTrack);
+        }
+      };
+      
+      if (audioRef.current.readyState >= 2) {
+        restorePosition();
+      } else {
+        audioRef.current.addEventListener('loadedmetadata', restorePosition, { once: true });
+      }
+      
+      return () => {
+        audioRef.current?.removeEventListener('loadedmetadata', restorePosition);
+      };
+    }
+  }, [audioUrl, currentTime, currentTrackIndex, audioTracks]);
+
+  // Sync progress with server periodically during playback
+  useEffect(() => {
+    if (!currentLibraryItem || !duration) return;
+
+    const syncProgress = async () => {
+      try {
+        const progress = currentTime / duration;
+        const isFinished = currentTime >= duration - 1; // Consider finished if within 1 second of end
+        await invoke('update_progress', {
+          libraryItemId: currentLibraryItem.id,
+          episodeId: null,
+          currentTime,
+          duration,
+          progress,
+          isFinished,
+        });
+      } catch (error) {
+        console.error('Failed to sync progress:', error);
+      }
+    };
+
+    // Sync every 10 seconds during playback
+    let interval: number | null = null;
+    if (isPlaying) {
+      interval = setInterval(syncProgress, 10000) as unknown as number;
+    }
+
+    // Sync when pausing
+    if (!isPlaying && currentTime > 0) {
+      syncProgress();
+    }
+
+    // Also sync when page is about to unload
+    const handleBeforeUnload = () => {
+      syncProgress();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      if (interval) clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isPlaying, currentTime, duration, currentLibraryItem]);
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -202,6 +281,13 @@ export default function Player() {
 
   const [showMenu, setShowMenu] = useState(false);
 
+  const getCoverUrl = () => {
+    if (currentLibraryItem?.media.coverPath && serverUrl) {
+      return `${serverUrl}/api/items/${currentLibraryItem.id}/cover`;
+    }
+    return null;
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-glass-dark backdrop-blur-xl border-t border-glass-200 p-4">
       <audio
@@ -250,8 +336,19 @@ export default function Player() {
         <div className="flex items-center justify-between">
           {/* Track Info */}
           <div className="flex items-center space-x-4 flex-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">🎧</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-lg flex items-center justify-center relative overflow-hidden">
+              {getCoverUrl() ? (
+                <img
+                  src={getCoverUrl()}
+                  alt={currentLibraryItem?.media.metadata.title || 'Cover'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-white font-bold">🎧</span>
+              )}
             </div>
             <div className="overflow-hidden">
               <h3 className="text-white font-semibold truncate">
@@ -265,11 +362,11 @@ export default function Player() {
 
           {/* Playback Controls */}
           <div className="flex items-center space-x-4">
-            <button onClick={handleSkipBack} className="text-gray-400 hover:text-white transition" title="-10s">
-              <RotateCcw className="w-5 h-5" />
-            </button>
             <button onClick={handlePreviousTrack} className="text-gray-400 hover:text-white transition" title="Previous track">
               <SkipBack className="w-5 h-5" />
+            </button>
+            <button onClick={handleSkipBack} className="text-gray-400 hover:text-white transition" title="-10s">
+              <RotateCcw className="w-5 h-5" />
             </button>
             <button
               onClick={handlePlayPause}
@@ -277,11 +374,11 @@ export default function Player() {
             >
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
             </button>
-            <button onClick={handleNextTrack} className="text-gray-400 hover:text-white transition" title="Next track">
-              <SkipForward className="w-5 h-5" />
-            </button>
             <button onClick={handleSkipForward} className="text-gray-400 hover:text-white transition" title="+10s">
               <RotateCw className="w-5 h-5" />
+            </button>
+            <button onClick={handleNextTrack} className="text-gray-400 hover:text-white transition" title="Next track">
+              <SkipForward className="w-5 h-5" />
             </button>
           </div>
 

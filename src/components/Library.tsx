@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
 import { Book, Clock, PlayCircle, ImageOff } from 'lucide-react';
@@ -7,6 +7,7 @@ import { LibraryItem } from '../types';
 export default function Library() {
   console.log('Library component rendering');
   const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, libraries, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime } = useStore();
+  const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {
     console.log('Library useEffect triggered, currentLibrary:', currentLibrary);
@@ -19,6 +20,28 @@ export default function Library() {
     console.log('Library component mounted, loading libraries');
     loadLibraries();
   }, []);
+
+  // Load progress for all library items
+  useEffect(() => {
+    if (currentLibraryItems.length > 0) {
+      loadProgressForItems();
+    }
+  }, [currentLibraryItems]);
+
+  const loadProgressForItems = async () => {
+    const progressMap: Record<string, any> = {};
+    for (const item of currentLibraryItems) {
+      try {
+        const progress = await invoke('get_media_progress', { libraryItemId: item.id });
+        if (progress) {
+          progressMap[item.id] = progress;
+        }
+      } catch (error) {
+        console.error(`Failed to load progress for item ${item.id}:`, error);
+      }
+    }
+    setItemProgress(progressMap);
+  };
 
   const loadLibraries = async () => {
     try {
@@ -63,6 +86,16 @@ export default function Library() {
     console.log('handlePlayItem called with item:', item);
     try {
       setCurrentLibraryItem(item);
+      
+      // Load saved progress from server
+      let savedProgress: any = null;
+      try {
+        savedProgress = await invoke('get_media_progress', { libraryItemId: item.id });
+        console.log('Saved progress:', savedProgress);
+      } catch (error) {
+        console.error('Failed to load saved progress:', error);
+      }
+      
       const response = await invoke('play_item', { libraryItemId: item.id, episodeId: null }) as any;
       console.log('Play response:', response);
       
@@ -74,33 +107,60 @@ export default function Library() {
         console.log('Token:', token);
         console.log('Total audio tracks:', response.audioTracks.length);
         
-        // Reset currentTime when loading new audiobook
-        setCurrentTime(0);
-        
         // Store all audio tracks
         setAudioTracks(response.audioTracks);
-        setCurrentTrackIndex(0);
-        
-        if (firstTrack.contentUrl) {
-          // The contentUrl might be relative, so we need to construct the full URL
-          let fullUrl = firstTrack.contentUrl.startsWith('http') 
-            ? firstTrack.contentUrl 
-            : `${serverUrl}${firstTrack.contentUrl}`;
-          
-          // Append token as query parameter for authentication
-          if (token && !fullUrl.includes('token=')) {
-            const separator = fullUrl.includes('?') ? '&' : '?';
-            fullUrl = `${fullUrl}${separator}token=${token}`;
-          }
-          
-          console.log('Full audio URL with token:', fullUrl);
-          setAudioUrl(fullUrl);
-        }
         
         // Calculate total duration from all tracks
         const totalDuration = response.audioTracks.reduce((sum: number, track: any) => sum + track.duration, 0);
         console.log('Total duration:', totalDuration);
         setDuration(totalDuration);
+        
+        // Set currentTime to saved progress if available
+        if (savedProgress && savedProgress.currentTime) {
+          // Find which track the saved time falls into
+          let trackIndex = 0;
+          let accumulatedTime = 0;
+          for (let i = 0; i < response.audioTracks.length; i++) {
+            if (accumulatedTime + response.audioTracks[i].duration > savedProgress.currentTime) {
+              trackIndex = i;
+              break;
+            }
+            accumulatedTime += response.audioTracks[i].duration;
+          }
+          setCurrentTrackIndex(trackIndex);
+          setCurrentTime(savedProgress.currentTime);
+          
+          // Load the correct track
+          const track = response.audioTracks[trackIndex];
+          if (track.contentUrl) {
+            let fullUrl = track.contentUrl.startsWith('http') 
+              ? track.contentUrl 
+              : `${serverUrl}${track.contentUrl}`;
+            
+            if (token && !fullUrl.includes('token=')) {
+              const separator = fullUrl.includes('?') ? '&' : '?';
+              fullUrl = `${fullUrl}${separator}token=${token}`;
+            }
+            
+            setAudioUrl(fullUrl);
+          }
+        } else {
+          setCurrentTrackIndex(0);
+          setCurrentTime(0);
+          
+          if (firstTrack.contentUrl) {
+            let fullUrl = firstTrack.contentUrl.startsWith('http') 
+              ? firstTrack.contentUrl 
+              : `${serverUrl}${firstTrack.contentUrl}`;
+            
+            if (token && !fullUrl.includes('token=')) {
+              const separator = fullUrl.includes('?') ? '&' : '?';
+              fullUrl = `${fullUrl}${separator}token=${token}`;
+            }
+            
+            setAudioUrl(fullUrl);
+          }
+        }
         
         setPlaying(true);
       } else {
@@ -166,6 +226,18 @@ export default function Library() {
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                   <PlayCircle className="w-12 h-12 text-white" />
                 </div>
+                {/* Progress bar */}
+                {itemProgress[item.id] && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1">
+                    <div
+                      className="h-full"
+                      style={{
+                        width: `${itemProgress[item.id].progress * 100}%`,
+                        backgroundColor: itemProgress[item.id].isFinished ? '#22c55e' : '#eab308',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               <h3 className="text-white font-semibold truncate mb-1">{item.media.metadata.title}</h3>
               <p className="text-gray-400 text-sm truncate mb-2">{item.media.metadata.authorName}</p>
