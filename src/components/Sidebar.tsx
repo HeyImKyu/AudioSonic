@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
-import { Library, Book, Search, LogOut, Settings, Radio, Disc, Heart } from 'lucide-react';
+import { Library, Book, Search, Radio, Disc, Heart } from 'lucide-react';
 
 export default function Sidebar() {
   const { 
@@ -10,9 +10,7 @@ export default function Sidebar() {
     setCurrentLibrary, 
     setLibraries, 
     sidebarView, 
-    setSidebarView,
-    logout,
-    user 
+    setSidebarView
   } = useStore();
 
   useEffect(() => {
@@ -40,10 +38,7 @@ export default function Sidebar() {
   };
 
   
-  const handleLogout = () => {
-    logout();
-  };
-
+  
   return (
     <div className="w-64 bg-surface border-r border-border flex flex-col">
       {/* Logo */}
@@ -157,28 +152,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* User & Settings */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-full flex items-center justify-center text-text text-sm font-bold">
-            {user?.username?.[0]?.toUpperCase() || 'U'}
           </div>
-          <div className="flex-1 overflow-hidden">
-            <p className="text-text text-sm font-medium truncate">{user?.username}</p>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <button className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition">
-            <Settings className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 text-text-secondary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
