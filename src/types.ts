@@ -142,9 +142,10 @@ export interface Collection {
   id: string;
   name: string;
   description?: string;
-  books: LibraryItem[];
+  libraryId: string;
+  books: any[]; // Use any[] to match the flexible JSON structure
   createdAt: number;
-  updatedAt: number;
+  lastUpdate: number;
 }
 
 export interface Playlist {

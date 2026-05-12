@@ -299,8 +299,11 @@ impl AudiobookshelfClient {
     }
 
     pub async fn get_collections(&self, library_id: &str) -> Result<Vec<Collection>> {
+        println!("API: get_collections called with library_id: {}", library_id);
         let base_url = self.get_base_url().await;
         let headers = self.get_headers().await?;
+        
+        println!("API: Making request to: {}/api/libraries/{}/collections", base_url, library_id);
 
         let response = self.client
             .get(&format!("{}/api/libraries/{}/collections", base_url, library_id))
@@ -309,16 +312,19 @@ impl AudiobookshelfClient {
             .await
             .context("Failed to fetch collections")?;
 
+        println!("API: Response status: {}", response.status());
+
         if !response.status().is_success() {
             return Err(anyhow::anyhow!("Failed to get collections: {}", response.status()));
         }
 
-        let collections: Vec<Collection> = response
+        let collections_response: CollectionsResponse = response
             .json()
             .await
             .context("Failed to parse collections response")?;
 
-        Ok(collections)
+        println!("API: Successfully parsed {} collections", collections_response.results.len());
+        Ok(collections_response.results)
     }
 
     pub async fn get_playlists(&self, library_id: &str) -> Result<Vec<Playlist>> {
@@ -342,6 +348,35 @@ impl AudiobookshelfClient {
             .context("Failed to parse playlists response")?;
 
         Ok(playlists)
+    }
+
+    pub async fn create_collection(&self, library_id: &str, name: &str, description: Option<&str>) -> Result<Collection> {
+        let base_url = self.get_base_url().await;
+        let headers = self.get_headers().await?;
+
+        let request_body = serde_json::json!({
+            "name": name,
+            "description": description
+        });
+
+        let response = self.client
+            .post(&format!("{}/api/libraries/{}/collections", base_url, library_id))
+            .headers(headers)
+            .json(&request_body)
+            .send()
+            .await
+            .context("Failed to create collection")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Failed to create collection: {}", response.status()));
+        }
+
+        let collection: Collection = response
+            .json()
+            .await
+            .context("Failed to parse collection response")?;
+
+        Ok(collection)
     }
 
     pub async fn create_bookmark(

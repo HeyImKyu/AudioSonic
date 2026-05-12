@@ -3,6 +3,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Library from './components/Library';
+import Collections from './components/Collections';
 import Player from './components/Player';
 import QueuePanel from './components/QueuePanel';
 import ThemeSelector from './components/ThemeSelector';
@@ -20,24 +21,19 @@ function App() {
       case 'library':
         return <Library />;
       case 'collections':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Collections</h2>
-            <p className="text-gray-400">Collections feature coming soon</p>
-          </div>
-        );
+        return <Collections />;
       case 'playlists':
         return (
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Playlists</h2>
-            <p className="text-gray-400">Playlists feature coming soon</p>
+            <h2 className="text-2xl font-bold text-text mb-4">Playlists</h2>
+            <p className="text-text-secondary">Playlists feature coming soon</p>
           </div>
         );
       case 'search':
         return (
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Search</h2>
-            <p className="text-gray-400">Search feature coming soon</p>
+            <h2 className="text-2xl font-bold text-text mb-4">Search</h2>
+            <p className="text-text-secondary">Search feature coming soon</p>
           </div>
         );
       default:
