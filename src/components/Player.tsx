@@ -3,7 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal } 
 import { useState, useRef, useEffect } from 'react';
 
 export default function Player() {
-  const { isPlaying, currentTime, duration, volume, currentLibraryItem, audioUrl, setPlaying, setCurrentTime, setDuration, setVolume } = useStore();
+  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -13,19 +13,6 @@ export default function Player() {
     }
   }, [volume]);
 
-  useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      console.log('Audio URL changed:', audioUrl);
-      // Pause and clear previous audio to prevent background loading
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = audioUrl;
-      audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play().catch(console.error);
-      }
-    }
-  }, [audioUrl, isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -39,6 +26,51 @@ export default function Player() {
     }
   }, [isPlaying]);
 
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatTimeHHMMSS = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleChapterClick = (trackIndex: number) => {
+    setCurrentTrackIndex(trackIndex);
+    const track = audioTracks[trackIndex];
+    if (track && audioRef.current) {
+      const trackStartTime = calculateTrackStartTime(trackIndex);
+      const fullUrl = track.contentUrl.startsWith('http') 
+        ? track.contentUrl 
+        : `${useStore.getState().serverUrl}${track.contentUrl}`;
+      const token = useStore.getState().token;
+      if (token && !fullUrl.includes('token=')) {
+        const separator = fullUrl.includes('?') ? '&' : '?';
+        const urlWithToken = `${fullUrl}${separator}token=${token}`;
+        audioRef.current.src = urlWithToken;
+      } else {
+        audioRef.current.src = fullUrl;
+      }
+      audioRef.current.load();
+      // Set store currentTime to cumulative time, but audio element to 0
+      setCurrentTime(trackStartTime);
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    }
+  };
+
+  const calculateTrackStartTime = (trackIndex: number) => {
+    return audioTracks.slice(0, trackIndex).reduce((sum, track) => sum + track.duration, 0);
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -46,10 +78,25 @@ export default function Player() {
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value);
-    setCurrentTime(newTime);
+    const newCumulativeTime = parseFloat(e.target.value);
+    setCurrentTime(newCumulativeTime);
+    // Find which track this time falls into
+    let trackIndex = 0;
+    let accumulatedTime = 0;
+    for (let i = 0; i < audioTracks.length; i++) {
+      if (accumulatedTime + audioTracks[i].duration > newCumulativeTime) {
+        trackIndex = i;
+        break;
+      }
+      accumulatedTime += audioTracks[i].duration;
+    }
+    // If we need to switch tracks
+    if (trackIndex !== currentTrackIndex) {
+      handleChapterClick(trackIndex);
+    }
+    // Set audio element currentTime to position within the track
     if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
+      audioRef.current.currentTime = newCumulativeTime - accumulatedTime;
     }
   };
 
@@ -74,6 +121,30 @@ export default function Player() {
     }
   };
 
+  const handleSkipBack = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+    }
+  };
+
+  const handleSkipForward = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+    }
+  };
+
+  const handlePreviousTrack = () => {
+    if (currentTrackIndex > 0) {
+      handleChapterClick(currentTrackIndex - 1);
+    }
+  };
+
+  const handleNextTrack = () => {
+    if (currentTrackIndex < audioTracks.length - 1) {
+      handleChapterClick(currentTrackIndex + 1);
+    }
+  };
+
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
@@ -85,7 +156,9 @@ export default function Player() {
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      const trackStartTime = calculateTrackStartTime(currentTrackIndex);
+      const cumulativeTime = trackStartTime + audioRef.current.currentTime;
+      setCurrentTime(cumulativeTime);
     }
   };
 
@@ -136,9 +209,11 @@ export default function Player() {
         preload="none"
         onProgress={handleProgress}
         onCanPlay={handleCanPlay}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleNextTrack}
       />
       <div className="max-w-7xl mx-auto">
-        {/* Progress Bar */}
+        {/* Progress Bar with Chapters */}
         <div className="mb-4">
           <input
             type="range"
@@ -146,12 +221,27 @@ export default function Player() {
             max={duration || 100}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-2 bg-glass-200 rounded-lg appearance-none cursor-pointer accent-accent-primary"
-            style={{ background: `linear-gradient(to right, #6366f1 ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${(currentTime / (duration || 1)) * 100}%)` }}
+            className="w-full h-2 bg-purple-900 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:bg-purple-900 [&::-webkit-slider-runnable-track]:rounded-lg"
           />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+          {/* Chapter markers */}
+          <div className="relative h-4 -mt-2">
+            {audioTracks.map((track, index) => {
+              const trackStartTime = calculateTrackStartTime(index);
+              const position = (trackStartTime / duration) * 100;
+              return (
+                <div
+                  key={index}
+                  onClick={() => handleChapterClick(index)}
+                  className="absolute top-0 w-1 h-3 bg-purple-500 cursor-pointer hover:bg-purple-400 transition-colors z-10"
+                  style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                  title={`Track ${index + 1}: ${track.metadata?.filename || 'Unknown'}`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-xs text-white mt-1">
+            <span>{formatTimeHHMMSS(currentTime)}</span>
+            <span>{formatTimeHHMMSS(duration)}</span>
           </div>
         </div>
 
@@ -174,7 +264,10 @@ export default function Player() {
 
           {/* Playback Controls */}
           <div className="flex items-center space-x-4">
-            <button className="text-gray-400 hover:text-white transition">
+            <button onClick={handleSkipBack} className="text-gray-400 hover:text-white transition" title="-10s">
+              <SkipBack className="w-5 h-5" />
+            </button>
+            <button onClick={handlePreviousTrack} className="text-gray-400 hover:text-white transition" title="Previous track">
               <SkipBack className="w-5 h-5" />
             </button>
             <button
@@ -183,7 +276,10 @@ export default function Player() {
             >
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
             </button>
-            <button className="text-gray-400 hover:text-white transition">
+            <button onClick={handleNextTrack} className="text-gray-400 hover:text-white transition" title="Next track">
+              <SkipForward className="w-5 h-5" />
+            </button>
+            <button onClick={handleSkipForward} className="text-gray-400 hover:text-white transition" title="+10s">
               <SkipForward className="w-5 h-5" />
             </button>
           </div>

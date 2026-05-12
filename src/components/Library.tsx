@@ -6,7 +6,7 @@ import { LibraryItem } from '../types';
 
 export default function Library() {
   console.log('Library component rendering');
-  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, libraries, setLibraries, setCurrentLibrary } = useStore();
+  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, libraries, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime } = useStore();
 
   useEffect(() => {
     console.log('Library useEffect triggered, currentLibrary:', currentLibrary);
@@ -72,6 +72,14 @@ export default function Library() {
         console.log('Content URL:', firstTrack.contentUrl);
         console.log('Server URL:', serverUrl);
         console.log('Token:', token);
+        console.log('Total audio tracks:', response.audioTracks.length);
+        
+        // Reset currentTime when loading new audiobook
+        setCurrentTime(0);
+        
+        // Store all audio tracks
+        setAudioTracks(response.audioTracks);
+        setCurrentTrackIndex(0);
         
         if (firstTrack.contentUrl) {
           // The contentUrl might be relative, so we need to construct the full URL
@@ -89,9 +97,10 @@ export default function Library() {
           setAudioUrl(fullUrl);
         }
         
-        if (firstTrack.duration) {
-          setDuration(firstTrack.duration);
-        }
+        // Calculate total duration from all tracks
+        const totalDuration = response.audioTracks.reduce((sum: number, track: any) => sum + track.duration, 0);
+        console.log('Total duration:', totalDuration);
+        setDuration(totalDuration);
         
         setPlaying(true);
       } else {

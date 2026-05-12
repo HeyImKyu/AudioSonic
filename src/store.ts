@@ -25,6 +25,8 @@ interface AudioSonicState {
   playbackSpeed: number;
   currentProgress: MediaProgress | null;
   playResponse: PlayResponse | null;
+  audioTracks: any[];
+  currentTrackIndex: number;
   
   // Queue
   queue: LibraryItem[];
@@ -52,6 +54,8 @@ interface AudioSonicState {
   setPlaybackSpeed: (speed: number) => void;
   setCurrentProgress: (progress: MediaProgress | null) => void;
   setPlayResponse: (response: PlayResponse | null) => void;
+  setAudioTracks: (tracks: any[]) => void;
+  setCurrentTrackIndex: (index: number) => void;
   setQueue: (queue: LibraryItem[]) => void;
   setQueueIndex: (index: number) => void;
   addToQueue: (item: LibraryItem) => void;
@@ -62,7 +66,7 @@ interface AudioSonicState {
   logout: () => void;
 }
 
-const initialState: AudioSonicState = {
+const initialState = {
   serverUrl: '',
   token: null,
   user: null,
@@ -80,9 +84,11 @@ const initialState: AudioSonicState = {
   playbackSpeed: 1,
   currentProgress: null,
   playResponse: null,
+  audioTracks: [],
+  currentTrackIndex: 0,
   queue: [],
   queueIndex: 0,
-  sidebarView: 'library',
+  sidebarView: 'library' as const,
   searchQuery: '',
 };
 
@@ -107,6 +113,8 @@ export const useStore = create<AudioSonicState>()(
       setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
       setCurrentProgress: (progress) => set({ currentProgress: progress }),
       setPlayResponse: (response) => set({ playResponse: response }),
+      setAudioTracks: (tracks) => set({ audioTracks: tracks }),
+      setCurrentTrackIndex: (index) => set({ currentTrackIndex: index }),
       setQueue: (queue) => set({ queue }),
       setQueueIndex: (index) => set({ queueIndex: index }),
       addToQueue: (item) => set((state) => ({ queue: [...state.queue, item] })),
