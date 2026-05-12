@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Library, LibraryItem, MediaProgress, User, PlayResponse } from './types';
+import { invoke } from '@tauri-apps/api/core';
+import { Library, LibraryItem, MediaProgress, User, PlayResponse, Collection } from './types';
 
 interface AudioSonicState {
   // Auth & Server
@@ -31,6 +32,10 @@ interface AudioSonicState {
   // Queue
   queue: LibraryItem[];
   queueIndex: number;
+  
+  // Collections (server-side only)
+  collections: Collection[];
+  collectionsLoading: boolean;
   
   // UI State
   sidebarView: 'library' | 'collections' | 'playlists' | 'search';
@@ -63,6 +68,9 @@ interface AudioSonicState {
   clearQueue: () => void;
   setSidebarView: (view: 'library' | 'collections' | 'playlists' | 'search') => void;
   setSearchQuery: (query: string) => void;
+  setCollections: (collections: Collection[]) => void;
+  setCollectionsLoading: (loading: boolean) => void;
+  loadCollections: (libraryId: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -88,6 +96,8 @@ const initialState = {
   currentTrackIndex: 0,
   queue: [],
   queueIndex: 0,
+  collections: [],
+  collectionsLoading: false,
   sidebarView: 'library' as const,
   searchQuery: '',
 };
@@ -125,6 +135,27 @@ export const useStore = create<AudioSonicState>()(
       clearQueue: () => set({ queue: [], queueIndex: 0 }),
       setSidebarView: (view) => set({ sidebarView: view }),
       setSearchQuery: (query) => set({ searchQuery: query }),
+      setCollections: (collections) => set({ collections }),
+      setCollectionsLoading: (loading) => set({ collectionsLoading: loading }),
+      loadCollections: async (libraryId) => {
+        console.log('Store: loadCollections called with libraryId:', libraryId);
+        set({ collectionsLoading: true });
+        try {
+          console.log('Store: invoking get_collections...');
+          const collections = await invoke<Collection[]>('get_collections', { libraryId });
+          console.log('Store: collections response:', collections);
+          console.log('Store: collections type:', typeof collections);
+          console.log('Store: is array?', Array.isArray(collections));
+          console.log('Store: collections length:', collections?.length);
+          set({ collections: collections || [] });
+        } catch (error) {
+          console.error('Store: Failed to load collections:', error);
+          console.error('Store: Error details:', error);
+          set({ collections: [] });
+        } finally {
+          set({ collectionsLoading: false });
+        }
+      },
       logout: () => set(initialState),
     }),
     {

@@ -482,13 +482,33 @@ pub struct Series {
 // ==================== COLLECTIONS & PLAYLISTS ====================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CollectionsResponse {
+    pub results: Vec<Collection>,
+    pub total: i32,
+    pub limit: i32,
+    pub page: i32,
+    #[serde(default)]
+    pub sort_desc: bool,
+    #[serde(default)]
+    pub minified: bool,
+    #[serde(default)]
+    pub include: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Collection {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub books: Vec<LibraryItem>,
+    #[serde(rename = "libraryId")]
+    pub library_id: String,
+    // Use serde_json::Value for books to handle complex nested structure
+    #[serde(default)]
+    pub books: Vec<serde_json::Value>,
     #[serde(rename = "createdAt")]
     pub created_at: i64,
+    #[serde(rename = "lastUpdate")]
+    pub last_update: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -601,6 +621,6 @@ mod tests {
         let metadata = result.unwrap();
         assert_eq!(metadata.filename, "test.m4b");
         assert_eq!(metadata.ext, ".m4b");
-        assert_eq!(metadata.mime_type, "audio/mp4");
+        assert_eq!(metadata.mime_type, Some("audio/mp4".to_string()));
     }
 }

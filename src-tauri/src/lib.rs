@@ -150,10 +150,13 @@ async fn get_collections(
     client: State<'_, ClientState>,
     library_id: String,
 ) -> Result<Vec<Collection>, String> {
-    client
-        .get_collections(&library_id)
-        .await
-        .map_err(|e| e.to_string())
+    println!("get_collections called with library_id: {}", library_id);
+    let result = client.get_collections(&library_id).await;
+    match &result {
+        Ok(collections) => println!("Collections fetched successfully: {} collections", collections.len()),
+        Err(e) => println!("Failed to fetch collections: {}", e),
+    }
+    result.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -190,6 +193,51 @@ async fn get_cover_url(
         .get_cover_url(&library_item_id)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_collection(
+    client: State<'_, ClientState>,
+    library_id: String,
+    name: String,
+    description: Option<String>,
+) -> Result<Collection, String> {
+    client
+        .create_collection(&library_id, &name, description.as_deref())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_collection(
+    client: State<'_, ClientState>,
+    collection_id: String,
+) -> Result<(), String> {
+    // TODO: Implement delete_collection in API client
+    // For now, return an error to indicate this isn't implemented yet
+    Err("delete_collection not yet implemented".to_string())
+}
+
+#[tauri::command]
+async fn add_to_collection(
+    client: State<'_, ClientState>,
+    collection_id: String,
+    library_item_id: String,
+) -> Result<(), String> {
+    // TODO: Implement add_to_collection in API client
+    // For now, return an error to indicate this isn't implemented yet
+    Err("add_to_collection not yet implemented".to_string())
+}
+
+#[tauri::command]
+async fn remove_from_collection(
+    client: State<'_, ClientState>,
+    collection_id: String,
+    library_item_id: String,
+) -> Result<(), String> {
+    // TODO: Implement remove_from_collection in API client
+    // For now, return an error to indicate this isn't implemented yet
+    Err("remove_from_collection not yet implemented".to_string())
 }
 
 #[tauri::command]
@@ -233,6 +281,10 @@ pub fn run() {
             create_bookmark,
             get_cover_url,
             get_audio_stream,
+            create_collection,
+            delete_collection,
+            add_to_collection,
+            remove_from_collection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
