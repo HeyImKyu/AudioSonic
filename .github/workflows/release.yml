@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  release:
+    if: ${{ (github.event.pull_request.merged == true) && !(contains(github.event.pull_request.labels.*.name, 'minor')) }}
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        
+    - name: Install Tauri CLI
+      run: cargo install tauri-cli --version "^2.0"
+      
+    - name: Get version
+      id: version
+      run: |
+        $packageJson = Get-Content "package.json" | ConvertFrom-Json
+        $version = $packageJson.version
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        
+    - name: Build application
+      run: npm run tauri build
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ steps.version.outputs.version }}
+        tag_name: v${{ steps.version.outputs.version }}
+        generate_release_notes: true
+        files: |
+          src-tauri/target/release/bundle/nsis/AudioSonic_${{ steps.version.outputs.version }}_x64-setup.exe
+          src-tauri/target/release/bundle/msi/AudioSonic_${{ steps.version.outputs.version }}_x64_en-US.msi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
