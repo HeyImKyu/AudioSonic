@@ -14,11 +14,18 @@ export default function Player() {
   }, [volume]);
 
   useEffect(() => {
-    console.log('Audio URL changed:', audioUrl);
-    if (audioRef.current && audioUrl) {
+    if (audioUrl && audioRef.current) {
+      console.log('Audio URL changed:', audioUrl);
+      // Pause and clear previous audio to prevent background loading
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = audioUrl;
       audioRef.current.load();
+      if (isPlaying) {
+        audioRef.current.play().catch(console.error);
+      }
     }
-  }, [audioUrl]);
+  }, [audioUrl, isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -108,10 +115,6 @@ export default function Player() {
     console.log('Audio can play');
   };
 
-  const handleEnded = () => {
-    setPlaying(false);
-  };
-
   const handleError = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const audio = e.currentTarget;
     console.error('Audio error:', {
@@ -131,12 +134,8 @@ export default function Player() {
         ref={audioRef}
         src={audioUrl || undefined}
         preload="none"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
         onProgress={handleProgress}
         onCanPlay={handleCanPlay}
-        onEnded={handleEnded}
-        onError={handleError}
       />
       <div className="max-w-7xl mx-auto">
         {/* Progress Bar */}
