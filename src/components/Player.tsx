@@ -313,9 +313,13 @@ export default function Player() {
               max={duration || 100}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              // className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              // style={{
+              //   background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${(currentTime / duration) * 100}%, var(--color-surface-hover) ${(currentTime / duration) * 100}%, var(--color-surface-hover) 100%)`
+              // }}
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer"
               style={{
-                background: `linear-gradient(to right, #ff6b35 0%, #ff6b35 ${(currentTime / duration) * 100}%, #4a5568 ${(currentTime / duration) * 100}%, #4a5568 100%)`
+                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${currentTime / duration * 100}%, var(--color-surface) ${currentTime / duration * 100}%, var(--color-surface) 100%)`
               }}
             />
             {/* Chapter markers underneath */}
@@ -333,7 +337,7 @@ export default function Player() {
                   <div
                     key={index}
                     onClick={() => handleChapterClick(index)}
-                    className="absolute top-0 w-0.5 h-2 bg-white/40 cursor-pointer hover:bg-white/60 transition-colors z-10"
+                    className="absolute top-0 w-0.5 h-2 bg-text-secondary cursor-pointer hover:bg-text transition-colors z-10"
                     style={{ left: `calc(${position}% * (100% - 16px) / 100% + 6px)` }}
                     title={`Chapter ${index + 1}`}
                   />
@@ -436,9 +440,9 @@ export default function Player() {
                 step="0.01"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="w-24 h-1.5 bg-surface-hover rounded-lg appearance-none cursor-pointer"
+                className="w-24 h-1.5 rounded-lg appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${volume * 100}%, var(--color-surface-hover) ${volume * 100}%, var(--color-surface-hover) 100%)`
+                  background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${volume * 100}%, var(--color-surface) ${volume * 100}%, var(--color-surface) 100%)`
                 }}
               />
             </div>
@@ -478,30 +482,30 @@ export default function Player() {
           appearance: none;
           width: 16px;
           height: 16px;
-          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          background: var(--color-primary, #ff6b35);
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 0 10px rgba(255, 107, 53, 0.5), 0 2px 6px rgba(0,0,0,0.3);
+          box-shadow: 0 0 10px var(--color-primary), 0 2px 6px rgba(0,0,0,0.3);
           border: 2px solid rgba(255,255,255,0.9);
           transition: all 0.2s ease;
         }
         .slider::-webkit-slider-thumb:hover {
           transform: scale(1.1);
-          box-shadow: 0 0 15px rgba(255, 107, 53, 0.7), 0 2px 8px rgba(0,0,0,0.4);
+          box-shadow: 0 0 15px var(--color-primary), 0 2px 8px rgba(0,0,0,0.4);
         }
         .slider::-moz-range-thumb {
           width: 16px;
           height: 16px;
-          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          background: var(--color-primary, #ff6b35);
           border-radius: 50%;
           cursor: pointer;
           border: 2px solid rgba(255,255,255,0.9);
-          box-shadow: 0 0 10px rgba(255, 107, 53, 0.5), 0 2px 6px rgba(0,0,0,0.3);
+          box-shadow: 0 0 10px var(--color-primary), 0 2px 6px rgba(0,0,0,0.3);
           transition: all 0.2s ease;
         }
         .slider::-moz-range-thumb:hover {
           transform: scale(1.1);
-          box-shadow: 0 0 15px rgba(255, 107, 53, 0.7), 0 2px 8px rgba(0,0,0,0.4);
+          box-shadow: 0 0 15px var(--color-primary), 0 2px 8px rgba(0,0,0,0.4);
         }
         
         /* Volume Slider */
@@ -509,30 +513,30 @@ export default function Player() {
           appearance: none;
           width: 12px;
           height: 12px;
-          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          background: var(--color-primary, #ff6b35);
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 0 6px rgba(255, 107, 53, 0.4), 0 1px 3px rgba(0,0,0,0.2);
+          box-shadow: 0 0 6px var(--color-primary), 0 1px 3px rgba(0,0,0,0.2);
           border: 1px solid rgba(255,255,255,0.8);
           transition: all 0.2s ease;
         }
         input[type="range"]::-webkit-slider-thumb:hover {
           transform: scale(1.15);
-          box-shadow: 0 0 10px rgba(255, 107, 53, 0.6), 0 1px 4px rgba(0,0,0,0.3);
+          box-shadow: 0 0 10px var(--color-primary), 0 1px 4px rgba(0,0,0,0.3);
         }
         input[type="range"]::-moz-range-thumb {
           width: 12px;
           height: 12px;
-          background: linear-gradient(135deg, #ff6b35, #ff8557);
+          background: var(--color-primary, #ff6b35);
           border-radius: 50%;
           cursor: pointer;
           border: 1px solid rgba(255,255,255,0.8);
-          box-shadow: 0 0 6px rgba(255, 107, 53, 0.4), 0 1px 3px rgba(0,0,0,0.2);
+          box-shadow: 0 0 6px var(--color-primary), 0 1px 3px rgba(0,0,0,0.2);
           transition: all 0.2s ease;
         }
         input[type="range"]::-moz-range-thumb:hover {
           transform: scale(1.15);
-          box-shadow: 0 0 10px rgba(255, 107, 53, 0.6), 0 1px 4px rgba(0,0,0,0.3);
+          box-shadow: 0 0 10px var(--color-primary), 0 1px 4px rgba(0,0,0,0.3);
         }
       `}</style>
     </div>
