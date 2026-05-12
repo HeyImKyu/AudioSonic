@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
-import { Library, Book, Search, Radio, Disc, Heart } from 'lucide-react';
+import { Library, Book, Search, Heart } from 'lucide-react';
 
 export default function Sidebar() {
   const { 
@@ -109,23 +109,7 @@ export default function Sidebar() {
             </nav>
           </div>
 
-          {/* Discover Section */}
-          <div>
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-              Discover
-            </h3>
-            <nav className="space-y-1">
-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-text-secondary hover:text-text hover:bg-surface-hover transition">
-                <Radio className="w-5 h-5" />
-                <span className="font-medium">New Releases</span>
-              </button>
-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-text-secondary hover:text-text hover:bg-surface-hover transition">
-                <Disc className="w-5 h-5" />
-                <span className="font-medium">Most Played</span>
-              </button>
-            </nav>
-          </div>
-        </div>
+                  </div>
 
         {/* Libraries List */}
         {libraries.length > 0 && (
