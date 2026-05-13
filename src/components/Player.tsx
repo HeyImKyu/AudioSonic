@@ -105,16 +105,6 @@ export default function Player() {
     };
   }, [isPlaying, currentTime, duration, currentLibraryItem]);
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const formatTimeHHMMSS = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -149,12 +139,6 @@ export default function Player() {
 
   const calculateTrackStartTime = (trackIndex: number) => {
     return audioTracks.slice(0, trackIndex).reduce((sum, track) => sum + track.duration, 0);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -324,7 +308,7 @@ export default function Player() {
             />
             {/* Chapter markers underneath */}
             <div className="relative h-2 mt-1">
-              {audioTracks.map((track, index) => {
+              {audioTracks.map((_, index) => {
                 const trackStartTime = calculateTrackStartTime(index);
                 const position = (trackStartTime / duration) * 100;
                 // Skip markers that would be too close to each other (less than 2% apart)

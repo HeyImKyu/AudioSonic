@@ -6,7 +6,7 @@ import { LibraryItem } from '../types';
 
 export default function Library() {
   console.log('Library component rendering');
-  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, libraries, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime } = useStore();
+  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {
