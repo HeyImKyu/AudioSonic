@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export default function Player() {
-  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl } = useStore();
+  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const positionRestoredRef = useRef(false);
@@ -59,6 +59,18 @@ export default function Player() {
       };
     }
   }, [audioUrl, currentTime, currentTrackIndex, audioTracks]);
+
+  // Prevent currentTime from being reset to 0 when audio loads
+  useEffect(() => {
+    if (audioRef.current && audioRef.current.readyState >= 1 && currentTime > 0 && positionRestoredRef.current) {
+      const trackStartTime = calculateTrackStartTime(currentTrackIndex);
+      const timeInTrack = currentTime - trackStartTime;
+      if (Math.abs(audioRef.current.currentTime - timeInTrack) > 1) {
+        console.log('Preventing currentTime reset, restoring to:', timeInTrack);
+        audioRef.current.currentTime = timeInTrack;
+      }
+    }
+  }, [currentTime, currentTrackIndex, audioTracks]);
 
   // Sync progress with server periodically during playback
   useEffect(() => {
@@ -141,14 +153,13 @@ export default function Player() {
     return audioTracks.slice(0, trackIndex).reduce((sum, track) => sum + track.duration, 0);
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCumulativeTime = parseFloat(e.target.value);
-    setCurrentTime(newCumulativeTime);
+  const handleChapterSeek = (startTime: number) => {
+    setCurrentTime(startTime);
     // Find which track this time falls into
     let trackIndex = 0;
     let accumulatedTime = 0;
     for (let i = 0; i < audioTracks.length; i++) {
-      if (accumulatedTime + audioTracks[i].duration > newCumulativeTime) {
+      if (accumulatedTime + audioTracks[i].duration > startTime) {
         trackIndex = i;
         break;
       }
@@ -160,8 +171,13 @@ export default function Player() {
     }
     // Set audio element currentTime to position within the track
     if (audioRef.current) {
-      audioRef.current.currentTime = newCumulativeTime - accumulatedTime;
+      audioRef.current.currentTime = startTime - accumulatedTime;
     }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCumulativeTime = parseFloat(e.target.value);
+    handleChapterSeek(newCumulativeTime);
   };
 
   const toggleMute = () => {
@@ -308,22 +324,22 @@ export default function Player() {
             />
             {/* Chapter markers underneath */}
             <div className="relative h-2 mt-1">
-              {audioTracks.map((_, index) => {
-                const trackStartTime = calculateTrackStartTime(index);
-                const position = (trackStartTime / duration) * 100;
+              {(chapters.length > 0 ? chapters : audioTracks).map((chapter: any, index: number) => {
+                const startTime = chapters.length > 0 ? chapter.start : calculateTrackStartTime(index);
+                const position = (startTime / duration) * 100;
                 // Skip markers that would be too close to each other (less than 2% apart)
                 if (index > 0) {
-                  const prevTrackStartTime = calculateTrackStartTime(index - 1);
-                  const prevPosition = (prevTrackStartTime / duration) * 100;
+                  const prevStartTime = chapters.length > 0 ? chapters[index - 1].start : calculateTrackStartTime(index - 1);
+                  const prevPosition = (prevStartTime / duration) * 100;
                   if (position - prevPosition < 2) return null;
                 }
                 return (
                   <div
                     key={index}
-                    onClick={() => handleChapterClick(index)}
+                    onClick={() => chapters.length > 0 ? handleChapterSeek(startTime) : handleChapterClick(index)}
                     className="absolute top-0 w-0.5 h-2 bg-text-secondary cursor-pointer hover:bg-text transition-colors z-10"
                     style={{ left: `calc(${position}% * (100% - 16px) / 100% + 6px)` }}
-                    title={`Chapter ${index + 1}`}
+                    title={chapters.length > 0 ? chapter.title : `Track ${index + 1}`}
                   />
                 );
               })}

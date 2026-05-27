@@ -73,8 +73,8 @@ export interface AudioTrackMetadata {
 
 export interface Chapter {
   id: number;
-  startTime: number;
-  endTime: number;
+  start: number;
+  end: number;
   title: string;
 }
 
@@ -96,6 +96,7 @@ export interface PlayResponse {
   libraryItemId: string;
   episodeId?: string;
   media: PlayMedia;
+  chapters?: Chapter[];
 }
 
 export interface PlayMedia {
