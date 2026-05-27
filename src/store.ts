@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
-import { Library, LibraryItem, MediaProgress, User, PlayResponse, Collection } from './types';
+import { Library, LibraryItem, MediaProgress, User, PlayResponse, Collection, Chapter } from './types';
 
 interface AudioSonicState {
   // Auth & Server
@@ -28,6 +28,7 @@ interface AudioSonicState {
   playResponse: PlayResponse | null;
   audioTracks: any[];
   currentTrackIndex: number;
+  chapters: Chapter[];
   
   // Queue
   queue: LibraryItem[];
@@ -61,6 +62,7 @@ interface AudioSonicState {
   setPlayResponse: (response: PlayResponse | null) => void;
   setAudioTracks: (tracks: any[]) => void;
   setCurrentTrackIndex: (index: number) => void;
+  setChapters: (chapters: Chapter[]) => void;
   setQueue: (queue: LibraryItem[]) => void;
   setQueueIndex: (index: number) => void;
   addToQueue: (item: LibraryItem) => void;
@@ -94,6 +96,7 @@ const initialState = {
   playResponse: null,
   audioTracks: [],
   currentTrackIndex: 0,
+  chapters: [],
   queue: [],
   queueIndex: 0,
   collections: [],
@@ -125,6 +128,7 @@ export const useStore = create<AudioSonicState>()(
       setPlayResponse: (response) => set({ playResponse: response }),
       setAudioTracks: (tracks) => set({ audioTracks: tracks }),
       setCurrentTrackIndex: (index) => set({ currentTrackIndex: index }),
+      setChapters: (chapters) => set({ chapters }),
       setQueue: (queue) => set({ queue }),
       setQueueIndex: (index) => set({ queueIndex: index }),
       addToQueue: (item) => set((state) => ({ queue: [...state.queue, item] })),

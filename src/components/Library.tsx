@@ -6,7 +6,7 @@ import { LibraryItem } from '../types';
 
 export default function Library() {
   console.log('Library component rendering');
-  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime } = useStore();
+  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -98,6 +98,18 @@ export default function Library() {
       
       const response = await invoke('play_item', { libraryItemId: item.id, episodeId: null }) as any;
       console.log('Play response:', response);
+      console.log('Response chapters:', response.chapters);
+      console.log('Response audioTracks:', response.audioTracks);
+      console.log('All response keys:', Object.keys(response));
+      
+      // Store chapters if available
+      if (response.chapters && response.chapters.length > 0) {
+        console.log('Chapters found:', response.chapters);
+        setChapters(response.chapters);
+      } else {
+        console.log('No chapters found, will use audio tracks');
+        setChapters([]);
+      }
       
       // Handle audioTracks field
       if (response.audioTracks && response.audioTracks.length > 0) {
