@@ -24,15 +24,16 @@ export default function QueuePanel() {
     setCurrentTrackIndex(index);
     if (audioTracks[index]) {
       const track = audioTracks[index];
-      let fullUrl = track.contentUrl.startsWith('http') 
-        ? track.contentUrl 
+      if (!track.contentUrl) return;
+      let fullUrl = track.contentUrl.startsWith('http')
+        ? track.contentUrl
         : `${serverUrl}${track.contentUrl}`;
-      
+
       if (token && !fullUrl.includes('token=')) {
         const separator = fullUrl.includes('?') ? '&' : '?';
         fullUrl = `${fullUrl}${separator}token=${token}`;
       }
-      
+
       setAudioUrl(fullUrl);
       setPlaying(true);
     }
@@ -49,21 +50,22 @@ export default function QueuePanel() {
       }
       accumulatedTime += audioTracks[i].duration;
     }
-    
+
     setCurrentTrackIndex(trackIndex);
     setCurrentTime(startTime);
-    
+
     if (audioTracks[trackIndex]) {
       const track = audioTracks[trackIndex];
-      let fullUrl = track.contentUrl.startsWith('http') 
-        ? track.contentUrl 
+      if (!track.contentUrl) return;
+      let fullUrl = track.contentUrl.startsWith('http')
+        ? track.contentUrl
         : `${serverUrl}${track.contentUrl}`;
-      
+
       if (token && !fullUrl.includes('token=')) {
         const separator = fullUrl.includes('?') ? '&' : '?';
         fullUrl = `${fullUrl}${separator}token=${token}`;
       }
-      
+
       setAudioUrl(fullUrl);
       setPlaying(true);
     }
@@ -193,7 +195,7 @@ export default function QueuePanel() {
                     <p className={`text-sm font-medium truncate ${
                       index === currentTrackIndex ? 'text-primary' : 'text-text'
                     }`}>
-                      {track.title || `Track ${index + 1}`}
+                      {track.metadata?.filename || `Track ${index + 1}`}
                     </p>
                     <p className="text-xs text-text-secondary truncate">
                       {currentLibraryItem?.media?.metadata?.title || 'Unknown Album'}
