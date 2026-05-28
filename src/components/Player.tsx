@@ -112,7 +112,7 @@ export default function Player() {
       if (interval) clearInterval(interval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isPlaying, currentTime, duration, currentLibraryItem]);
+  }, [isPlaying, currentTime, duration, currentLibraryItem?.id]);
 
   const formatTimeHHMMSS = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
