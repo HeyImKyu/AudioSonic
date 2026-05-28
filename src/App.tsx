@@ -41,6 +41,13 @@ function App() {
     }
   };
 
+  const viewTitle = {
+    library: 'Library',
+    collections: 'Collections',
+    playlists: 'Playlists',
+    search: 'Search',
+  }[sidebarView] || 'Library';
+
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-background text-text" style={{ backdropFilter: 'var(--glass-blur)' }}>
@@ -51,12 +58,7 @@ function App() {
               <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center space-x-4">
-                    <h1 className="text-2xl font-bold text-text">
-                      {sidebarView === 'library' ? 'Library' : 
-                       sidebarView === 'collections' ? 'Collections' :
-                       sidebarView === 'playlists' ? 'Playlists' :
-                       sidebarView === 'search' ? 'Search' : 'Library'}
-                    </h1>
+                    <h1 className="text-2xl font-bold text-text">{viewTitle}</h1>
                   </div>
                   <ThemeSelector />
                 </div>

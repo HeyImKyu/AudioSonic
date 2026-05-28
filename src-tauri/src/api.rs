@@ -66,9 +66,6 @@ impl AudiobookshelfClient {
 
         let response_text = response.text().await.context("Failed to read response text")?;
         
-        // Log the response for debugging
-        eprintln!("Login response: {}", response_text);
-
         let login_response: LoginResponse = serde_json::from_str(&response_text)
             .context("Failed to parse login response")?;
 
@@ -150,11 +147,11 @@ impl AudiobookshelfClient {
     }
 
     pub async fn play_item(&self, library_item_id: &str, episode_id: Option<&str>) -> Result<PlayResponse> {
-        let url = format!("{}/api/items/{}/play", self.base_url.read().await, library_item_id);
-        
-        if let Some(ep_id) = episode_id {
-            let url = format!("{}/{}", url, ep_id);
-        }
+        let url = if let Some(ep_id) = episode_id {
+            format!("{}/api/items/{}/play/{}", self.base_url.read().await, library_item_id, ep_id)
+        } else {
+            format!("{}/api/items/{}/play", self.base_url.read().await, library_item_id)
+        };
         
         let request_body = PlayRequest {
             device_info: DeviceInfo {
@@ -178,12 +175,7 @@ impl AudiobookshelfClient {
             .send()
             .await?;
 
-        let status = response.status();
         let response_text = response.text().await?;
-        
-        println!("Play response status: {}", status);
-        println!("Play response body (first 500 chars): {}", &response_text.chars().take(500).collect::<String>());
-
         let play_response: PlayResponse = serde_json::from_str(&response_text)?;
         
         Ok(play_response)
@@ -299,11 +291,8 @@ impl AudiobookshelfClient {
     }
 
     pub async fn get_collections(&self, library_id: &str) -> Result<Vec<Collection>> {
-        println!("API: get_collections called with library_id: {}", library_id);
         let base_url = self.get_base_url().await;
         let headers = self.get_headers().await?;
-        
-        println!("API: Making request to: {}/api/libraries/{}/collections", base_url, library_id);
 
         let response = self.client
             .get(&format!("{}/api/libraries/{}/collections", base_url, library_id))
@@ -311,8 +300,6 @@ impl AudiobookshelfClient {
             .send()
             .await
             .context("Failed to fetch collections")?;
-
-        println!("API: Response status: {}", response.status());
 
         if !response.status().is_success() {
             return Err(anyhow::anyhow!("Failed to get collections: {}", response.status()));
@@ -323,7 +310,6 @@ impl AudiobookshelfClient {
             .await
             .context("Failed to parse collections response")?;
 
-        println!("API: Successfully parsed {} collections", collections_response.results.len());
         Ok(collections_response.results)
     }
 

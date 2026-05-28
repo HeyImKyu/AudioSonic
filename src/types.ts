@@ -144,7 +144,7 @@ export interface Collection {
   name: string;
   description?: string;
   libraryId: string;
-  books: any[]; // Use any[] to match the flexible JSON structure
+  books: LibraryItem[];
   createdAt: number;
   lastUpdate: number;
 }
@@ -208,57 +208,3 @@ export interface ServerSettings {
   version: string;
   authMethod?: string;
 }
-
-export interface AppState {
-  serverUrl?: string;
-  token?: string;
-  user?: User;
-  currentLibrary?: Library;
-  currentLibraryItems?: LibraryItem[];
-  currentLibraryItem?: LibraryItem;
-  currentProgress?: MediaProgress;
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  queue: LibraryItem[];
-  queueIndex: number;
-  volume: number;
-  playbackSpeed: number;
-}
-
-export interface PlayerState {
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  volume: number;
-  audioUrl: string | null;
-  playbackSpeed: number;
-  currentItem?: LibraryItem;
-  currentTrackIndex: number;
-  queue: LibraryItem[];
-  queueIndex: number;
-}
-
-export interface AudioSonicState {
-  serverUrl: string | null;
-  token: string | null;
-  user: User | null;
-  isAuthenticated: boolean;
-  libraries: Library[];
-  currentLibrary: Library | null;
-  currentLibraryItems: LibraryItem[];
-  currentLibraryItem: LibraryItem | null;
-  itemsInProgress: MediaProgress[];
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  volume: number;
-  audioUrl: string | null;
-  playbackSpeed: number;
-  currentProgress: MediaProgress | null;
-  playResponse: PlayResponse | null;
-  queue: LibraryItem[];
-  queueIndex: number;
-  sidebarView: 'library' | 'collections' | 'playlists' | 'search';
-  searchQuery: string;
-};
