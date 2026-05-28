@@ -2,9 +2,9 @@
 
 A gorgeous, modern, and blazing fast Audiobookshelf desktop client. Inspired by Winamp, built for the future with Tauri & React.
 
-![AudioSonic](https://img.shields.io/badge/AudioSonic-v0.1.0-purple)
+![AudioSonic](https://img.shields.io/badge/AudioSonic-v0.1.1-purple)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue)
-![React](https://img.shields.io/badge/React-18.2-blue)
+![React](https://img.shields.io/badge/React-19.2-blue)
 ![Rust](https://img.shields.io/badge/Rust-1.74-orange)
 
 ## Features
@@ -39,7 +39,7 @@ A gorgeous, modern, and blazing fast Audiobookshelf desktop client. Inspired by 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/audiosonic.git
+   git clone https://github.com/heyimkyu/audiosonic.git
    cd audiosonic
    ```
 

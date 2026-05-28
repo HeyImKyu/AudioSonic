@@ -20,7 +20,6 @@ export default function Player() {
   useEffect(() => {
     if (audioUrl) {
       isRestoringPositionRef.current = false;
-      console.log('Audio URL changed, reset restoration flag');
     }
   }, [audioUrl]);
 
@@ -30,7 +29,6 @@ export default function Player() {
         // Set position when play transitions from false to true
         const trackStartTime = calculateTrackStartTime(currentTrackIndex);
         const timeInTrack = currentTime - trackStartTime;
-        console.log('Playing - setting position to:', timeInTrack);
         
         const attemptPlay = async () => {
           if (audioRef.current && audioRef.current.readyState >= 2) {
@@ -40,19 +38,16 @@ export default function Player() {
               
               // Set position
               audioRef.current.currentTime = timeInTrack;
-              console.log('Position set to:', timeInTrack);
               
               // Small delay to ensure position is set
               await new Promise(resolve => setTimeout(resolve, 50));
               
               // Then play
               await audioRef.current.play();
-              console.log('Play started');
               
               // Clear flag quickly after playing starts
               setTimeout(() => {
                 isRestoringPositionRef.current = false;
-                console.log('Position restoration flag cleared');
               }, 100);
             } catch (e) {
               console.error('Play error:', e);
@@ -129,7 +124,7 @@ export default function Player() {
   const handleChapterClick = (trackIndex: number) => {
     setCurrentTrackIndex(trackIndex);
     const track = audioTracks[trackIndex];
-    if (track && audioRef.current) {
+    if (track && track.contentUrl && audioRef.current) {
       const trackStartTime = calculateTrackStartTime(trackIndex);
       const fullUrl = track.contentUrl.startsWith('http') 
         ? track.contentUrl 
@@ -250,11 +245,6 @@ export default function Player() {
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
-      console.log('Audio metadata loaded:', {
-        duration: audioRef.current.duration,
-        readyState: audioRef.current.readyState,
-        networkState: audioRef.current.networkState
-      });
       // Don't set currentTime from audio element - we manage it in the play/pause effect
       // Calculate total duration of all tracks
       const totalDuration = audioTracks.reduce((sum, track) => sum + (track.duration || 0), 0);
@@ -263,17 +253,11 @@ export default function Player() {
   };
 
   const handleProgress = () => {
-    if (audioRef.current) {
-      console.log('Audio loading progress:', {
-        buffered: audioRef.current.buffered.length,
-        networkState: audioRef.current.networkState,
-        readyState: audioRef.current.readyState
-      });
-    }
+    // Progress event handler - no action needed
   };
 
   const handleCanPlay = () => {
-    console.log('Audio can play');
+    // Can play event handler - no action needed
   };
 
   const handleError = (e: React.SyntheticEvent<HTMLAudioElement>) => {

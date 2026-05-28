@@ -5,19 +5,16 @@ import { Book, Clock, PlayCircle } from 'lucide-react';
 import { LibraryItem } from '../types';
 
 export default function Library() {
-  console.log('Library component rendering');
   const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    console.log('Library useEffect triggered, currentLibrary:', currentLibrary);
     if (currentLibrary) {
       loadLibraryItems();
     }
   }, [currentLibrary]);
 
   useEffect(() => {
-    console.log('Library component mounted, loading libraries');
     loadLibraries();
   }, []);
 
@@ -47,29 +44,23 @@ export default function Library() {
     try {
       // Configure the Rust client with persisted credentials
       if (serverUrl && token) {
-        console.log('Configuring Rust client with persisted credentials');
         await invoke('set_config', { serverUrl, token });
       }
       
-      console.log('Attempting to load libraries...');
       const libs = await invoke('get_libraries');
-      console.log('Libraries response:', libs);
       
       if (libs && Array.isArray(libs)) {
         setLibraries(libs);
-        console.log('Libraries set in store:', libs);
         
         // Set the first library as current if none is set
         if (!currentLibrary && libs.length > 0) {
           setCurrentLibrary(libs[0]);
-          console.log('Set current library to:', libs[0]);
         }
       } else {
         console.error('Invalid libraries response:', libs);
       }
     } catch (error) {
       console.error('Failed to load libraries:', error);
-      console.error('Error details:', JSON.stringify(error));
     }
   };
 

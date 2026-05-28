@@ -109,33 +109,31 @@ export default function Sidebar() {
             </nav>
           </div>
 
-                  </div>
-
-        {/* Libraries List */}
-        {libraries.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-              Libraries
-            </h3>
-            <div className="space-y-1">
-              {libraries.map((library) => (
-                <button
-                  key={library.id}
-                  onClick={() => handleLibrarySelect(library)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                    currentLibrary?.id === library.id
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'text-text-secondary hover:text-text hover:bg-surface-hover'
-                  }`}
-                >
-                  {library.name}
-                </button>
-              ))}
+          {/* Libraries List */}
+          {libraries.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                Libraries
+              </h3>
+              <div className="space-y-1">
+                {libraries.map((library) => (
+                  <button
+                    key={library.id}
+                    onClick={() => handleLibrarySelect(library)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                      currentLibrary?.id === library.id
+                        ? 'bg-primary/20 text-primary border border-primary/30'
+                        : 'text-text-secondary hover:text-text hover:bg-surface-hover'
+                    }`}
+                  >
+                    {library.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-
-          </div>
+    </div>
   );
 }

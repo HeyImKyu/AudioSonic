@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
-import { Library, LibraryItem, MediaProgress, User, PlayResponse, Collection, Chapter } from './types';
+import { Library, LibraryItem, MediaProgress, User, PlayResponse, Collection, Chapter, AudioTrack } from './types';
 
 interface AudioSonicState {
   // Auth & Server
@@ -26,7 +26,7 @@ interface AudioSonicState {
   playbackSpeed: number;
   currentProgress: MediaProgress | null;
   playResponse: PlayResponse | null;
-  audioTracks: any[];
+  audioTracks: AudioTrack[];
   currentTrackIndex: number;
   chapters: Chapter[];
   
@@ -60,7 +60,7 @@ interface AudioSonicState {
   setPlaybackSpeed: (speed: number) => void;
   setCurrentProgress: (progress: MediaProgress | null) => void;
   setPlayResponse: (response: PlayResponse | null) => void;
-  setAudioTracks: (tracks: any[]) => void;
+  setAudioTracks: (tracks: AudioTrack[]) => void;
   setCurrentTrackIndex: (index: number) => void;
   setChapters: (chapters: Chapter[]) => void;
   setQueue: (queue: LibraryItem[]) => void;
@@ -142,19 +142,12 @@ export const useStore = create<AudioSonicState>()(
       setCollections: (collections) => set({ collections }),
       setCollectionsLoading: (loading) => set({ collectionsLoading: loading }),
       loadCollections: async (libraryId) => {
-        console.log('Store: loadCollections called with libraryId:', libraryId);
         set({ collectionsLoading: true });
         try {
-          console.log('Store: invoking get_collections...');
           const collections = await invoke<Collection[]>('get_collections', { libraryId });
-          console.log('Store: collections response:', collections);
-          console.log('Store: collections type:', typeof collections);
-          console.log('Store: is array?', Array.isArray(collections));
-          console.log('Store: collections length:', collections?.length);
           set({ collections: collections || [] });
         } catch (error) {
-          console.error('Store: Failed to load collections:', error);
-          console.error('Store: Error details:', error);
+          console.error('Failed to load collections:', error);
           set({ collections: [] });
         } finally {
           set({ collectionsLoading: false });

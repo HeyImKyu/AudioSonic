@@ -14,7 +14,6 @@ async fn set_config(
     server_url: String,
     token: String,
 ) -> Result<(), String> {
-    println!("Setting config: server_url={}, token={}", server_url, token);
     client.set_config(server_url, Some(token)).await;
     Ok(())
 }
@@ -34,13 +33,7 @@ async fn login(
 
 #[tauri::command]
 async fn get_libraries(client: State<'_, ClientState>) -> Result<Vec<Library>, String> {
-    println!("get_libraries called");
-    let result = client.get_libraries().await;
-    match &result {
-        Ok(libraries) => println!("Libraries fetched successfully: {} libraries", libraries.len()),
-        Err(e) => println!("Failed to fetch libraries: {}", e),
-    }
-    result.map_err(|e| e.to_string())
+    client.get_libraries().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -71,29 +64,10 @@ async fn play_item(
     library_item_id: String,
     episode_id: Option<String>,
 ) -> Result<PlayResponse, String> {
-    println!("play_item called with library_item_id: {}, episode_id: {:?}", library_item_id, episode_id);
-    let result = client
+    client
         .play_item(&library_item_id, episode_id.as_deref())
-        .await;
-    
-    match &result {
-        Ok(response) => {
-            println!("Play response successful");
-            println!("Response library_item_id: {:?}", response.library_item_id);
-            println!("Response episode_id: {:?}", response.episode_id);
-            println!("Response audio_tracks count: {}", response.audio_tracks.len());
-            if let Some(first_track) = response.audio_tracks.first() {
-                println!("First track content_url: {}", first_track.content_url);
-                println!("First track duration: {}", first_track.duration);
-            }
-        },
-        Err(e) => {
-            println!("Play response error: {}", e);
-            println!("Error details: {:?}", e);
-        },
-    }
-    
-    result.map_err(|e| e.to_string())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -150,13 +124,7 @@ async fn get_collections(
     client: State<'_, ClientState>,
     library_id: String,
 ) -> Result<Vec<Collection>, String> {
-    println!("get_collections called with library_id: {}", library_id);
-    let result = client.get_collections(&library_id).await;
-    match &result {
-        Ok(collections) => println!("Collections fetched successfully: {} collections", collections.len()),
-        Err(e) => println!("Failed to fetch collections: {}", e),
-    }
-    result.map_err(|e| e.to_string())
+    client.get_collections(&library_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
