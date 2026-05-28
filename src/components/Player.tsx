@@ -7,7 +7,7 @@ export default function Player() {
   const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const positionRestoredRef = useRef(false);
+  const isRestoringPositionRef = useRef(false);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -16,61 +16,63 @@ export default function Player() {
   }, [volume]);
 
 
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        console.log('Attempting to play audio');
-        audioRef.current.play().catch(e => console.error('Play error:', e));
-      } else {
-        console.log('Pausing audio');
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  // Restore audio element currentTime when audioUrl changes (for saved progress)
+  // Reset restoration flag when audioUrl changes
   useEffect(() => {
     if (audioUrl) {
-      positionRestoredRef.current = false;
+      isRestoringPositionRef.current = false;
+      console.log('Audio URL changed, reset restoration flag');
     }
   }, [audioUrl]);
 
   useEffect(() => {
-    if (audioRef.current && audioUrl && currentTime > 0 && audioTracks.length > 0 && !positionRestoredRef.current) {
-      const trackStartTime = calculateTrackStartTime(currentTrackIndex);
-      const timeInTrack = currentTime - trackStartTime;
-      console.log('Restoring audio position:', { currentTime, trackStartTime, timeInTrack, currentTrackIndex });
-      const restorePosition = () => {
-        if (audioRef.current && timeInTrack >= 0) {
-          audioRef.current.currentTime = timeInTrack;
-          positionRestoredRef.current = true;
-          console.log('Audio position restored to:', timeInTrack);
-        }
-      };
-      
-      if (audioRef.current.readyState >= 2) {
-        restorePosition();
-      } else {
-        audioRef.current.addEventListener('loadedmetadata', restorePosition, { once: true });
-      }
-      
-      return () => {
-        audioRef.current?.removeEventListener('loadedmetadata', restorePosition);
-      };
-    }
-  }, [audioUrl, currentTime, currentTrackIndex, audioTracks]);
+    if (audioRef.current) {
+      if (isPlaying) {
+        // Set position when play transitions from false to true
+        const trackStartTime = calculateTrackStartTime(currentTrackIndex);
+        const timeInTrack = currentTime - trackStartTime;
+        console.log('Playing - setting position to:', timeInTrack);
+        
+        const attemptPlay = async () => {
+          if (audioRef.current && audioRef.current.readyState >= 2) {
+            try {
+              // Set restoration flag to prevent handleTimeUpdate override
+              isRestoringPositionRef.current = true;
+              
+              // Set position
+              audioRef.current.currentTime = timeInTrack;
+              console.log('Position set to:', timeInTrack);
+              
+              // Small delay to ensure position is set
+              await new Promise(resolve => setTimeout(resolve, 50));
+              
+              // Then play
+              await audioRef.current.play();
+              console.log('Play started');
+              
+              // Clear flag quickly after playing starts
+              setTimeout(() => {
+                isRestoringPositionRef.current = false;
+                console.log('Position restoration flag cleared');
+              }, 100);
+            } catch (e) {
+              console.error('Play error:', e);
+              isRestoringPositionRef.current = false;
+            }
+          }
+        };
 
-  // Prevent currentTime from being reset to 0 when audio loads
-  useEffect(() => {
-    if (audioRef.current && audioRef.current.readyState >= 1 && currentTime > 0 && positionRestoredRef.current) {
-      const trackStartTime = calculateTrackStartTime(currentTrackIndex);
-      const timeInTrack = currentTime - trackStartTime;
-      if (Math.abs(audioRef.current.currentTime - timeInTrack) > 1) {
-        console.log('Preventing currentTime reset, restoring to:', timeInTrack);
-        audioRef.current.currentTime = timeInTrack;
+        if (audioRef.current.readyState >= 2) {
+          attemptPlay();
+        } else {
+          audioRef.current.addEventListener('loadedmetadata', () => attemptPlay(), { once: true });
+        }
+      } else {
+        audioRef.current.pause();
       }
     }
-  }, [currentTime, currentTrackIndex, audioTracks]);
+  }, [isPlaying, currentTrackIndex]);
+
+
 
   // Sync progress with server periodically during playback
   useEffect(() => {
@@ -235,6 +237,10 @@ export default function Player() {
   };
 
   const handleTimeUpdate = () => {
+    // Don't update store while restoring position to prevent override
+    if (isRestoringPositionRef.current) {
+      return;
+    }
     if (audioRef.current) {
       const trackStartTime = calculateTrackStartTime(currentTrackIndex);
       const cumulativeTime = trackStartTime + audioRef.current.currentTime;
@@ -249,7 +255,7 @@ export default function Player() {
         readyState: audioRef.current.readyState,
         networkState: audioRef.current.networkState
       });
-      setCurrentTime(audioRef.current.currentTime);
+      // Don't set currentTime from audio element - we manage it in the play/pause effect
       // Calculate total duration of all tracks
       const totalDuration = audioTracks.reduce((sum, track) => sum + (track.duration || 0), 0);
       setDuration(totalDuration);
@@ -295,7 +301,7 @@ export default function Player() {
       <audio
         ref={audioRef}
         src={audioUrl || undefined}
-        preload="none"
+        preload="metadata"
         onProgress={handleProgress}
         onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}
