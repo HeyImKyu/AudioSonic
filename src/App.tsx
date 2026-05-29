@@ -7,10 +7,11 @@ import Collections from './components/Collections';
 import Player from './components/Player';
 import QueuePanel from './components/QueuePanel';
 import ThemeSelector from './components/ThemeSelector';
+import Settings from './components/Settings';
 import './App.css';
 
 function App() {
-  const { isAuthenticated, sidebarView } = useStore();
+  const { isAuthenticated, sidebarView, settingsOpen, setSettingsOpen } = useStore();
 
   if (!isAuthenticated) {
     return <Login />;
@@ -71,6 +72,7 @@ function App() {
           </div>
         </div>
         <Player />
+        {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
       </div>
     </ThemeProvider>
   );

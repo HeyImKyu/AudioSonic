@@ -41,6 +41,7 @@ interface AudioSonicState {
   // UI State
   sidebarView: 'library' | 'collections' | 'playlists' | 'search';
   searchQuery: string;
+  settingsOpen: boolean;
   
   // Actions
   setServerUrl: (url: string) => void;
@@ -67,6 +68,7 @@ interface AudioSonicState {
   setQueueIndex: (index: number) => void;
   addToQueue: (item: LibraryItem) => void;
   removeFromQueue: (index: number) => void;
+  setSettingsOpen: (open: boolean) => void;
   clearQueue: () => void;
   setSidebarView: (view: 'library' | 'collections' | 'playlists' | 'search') => void;
   setSearchQuery: (query: string) => void;
@@ -103,6 +105,7 @@ const initialState = {
   collectionsLoading: false,
   sidebarView: 'library' as const,
   searchQuery: '',
+  settingsOpen: false,
 };
 
 export const useStore = create<AudioSonicState>()(
@@ -139,6 +142,7 @@ export const useStore = create<AudioSonicState>()(
       clearQueue: () => set({ queue: [], queueIndex: 0 }),
       setSidebarView: (view) => set({ sidebarView: view }),
       setSearchQuery: (query) => set({ searchQuery: query }),
+      setSettingsOpen: (open) => set({ settingsOpen: open }),
       setCollections: (collections) => set({ collections }),
       setCollectionsLoading: (loading) => set({ collectionsLoading: loading }),
       loadCollections: async (libraryId) => {

@@ -1,16 +1,17 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
-import { Library, Book, Search, Heart } from 'lucide-react';
+import { Library, Book, Search, Heart, Settings } from 'lucide-react';
 
 export default function Sidebar() {
-  const { 
-    libraries, 
-    currentLibrary, 
-    setCurrentLibrary, 
-    setLibraries, 
-    sidebarView, 
-    setSidebarView
+  const {
+    libraries,
+    currentLibrary,
+    setCurrentLibrary,
+    setLibraries,
+    sidebarView,
+    setSidebarView,
+    setSettingsOpen
   } = useStore();
 
   useEffect(() => {
@@ -133,6 +134,17 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Settings Button */}
+      <div className="p-4 border-t border-border pb-44">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition text-text-secondary hover:text-text hover:bg-surface-hover"
+        >
+          <Settings className="w-5 h-5" />
+          <span className="font-medium">Settings</span>
+        </button>
       </div>
     </div>
   );

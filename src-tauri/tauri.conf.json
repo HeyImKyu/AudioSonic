@@ -31,7 +31,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "description": "A modern desktop client for Audiobookshelf - listen to your audiobooks with a beautiful, intuitive interface.",
     "shortDescription": "Audiobookshelf Desktop Client"
   }
 }
