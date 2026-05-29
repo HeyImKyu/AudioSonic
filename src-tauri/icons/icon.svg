@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" style="stop-color:#6366f1;stop-opacity:1"/>
+      <stop offset="1" style="stop-color:#8b5cf6;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="240" fill="url(#gradient)"/>
+  <g style="" transform="matrix(0.522054, 0, 0, 0.522054, 121.159393, 192.970825)">
+    <rect x="156" y="192.152" width="200" height="260" rx="8" fill="white" opacity="0.6"/>
+    <rect x="156" y="192.152" width="20" height="260" rx="4" fill="white" opacity="0.8"/>
+    <line x1="176" y1="232.152" x2="340" y2="232.152" stroke="blue" stroke-width="2" opacity="0.3"/>
+    <line x1="176" y1="252.152" x2="340" y2="252.152" stroke="blue" stroke-width="2" opacity="0.3"/>
+    <line x1="176" y1="272.152" x2="340" y2="272.152" stroke="blue" stroke-width="2" opacity="0.3"/>
+    <line x1="176" y1="292.15" x2="340" y2="292.15" stroke="blue" stroke-width="2" opacity="0.3"/>
+    <rect x="156" y="175" width="220" height="277" fill="white" opacity="0.6" rx="8"/>
+    <rect x="156" y="181" width="214" height="271" fill="white" opacity="0.3" rx="8"/>
+    <rect x="156" y="187" width="208" height="265" fill="white" opacity="0.3" rx="8"/>
+  </g>
+  <path d="M 128 281 L 128 225 C 128 154.308 185.308 97 256 97 C 326.692 97 384 154.308 384 225 L 384 281" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <rect x="96" y="265" width="64" height="96" rx="16" fill="white"/>
+  <rect x="352" y="265" width="64" height="96" rx="16" fill="white"/>
+</svg>

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "audiosonic",
+  "productName": "AudioSonic",
   "version": "1.0.0",
   "identifier": "com.kyu.audiosonic",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "audiosonic",
+        "title": "AudioSonic",
         "width": 800,
         "height": 600
       }
@@ -30,6 +30,8 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "description": "A modern desktop client for Audiobookshelf - listen to your audiobooks with a beautiful, intuitive interface.",
+    "shortDescription": "Audiobookshelf Desktop Client"
   }
 }
