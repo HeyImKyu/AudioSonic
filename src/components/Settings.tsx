@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
-import { X, LogOut, Headphones, Sun, Moon } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
 
 export default function Settings({ onClose }: { onClose: () => void }) {
   const { user, setAuthenticated, setToken, setUser } = useStore();
