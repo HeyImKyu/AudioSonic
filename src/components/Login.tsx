@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-glass-dark backdrop-blur-xl rounded-2xl p-8 border border-glass-200 shadow-2xl">
+        <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-8 border border-white/10 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">AudioSonic</h1>
             <p className="text-gray-400">Audiobookshelf Desktop Client</p>
@@ -52,7 +52,7 @@ export default function Login() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://audiobookshelf.example.com"
-                className="w-full px-4 py-3 bg-glass-200 border border-glass-300 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 required
               />
             </div>
@@ -66,7 +66,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
-                className="w-full px-4 py-3 bg-glass-200 border border-glass-300 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 required
               />
             </div>
@@ -81,7 +81,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full px-4 py-3 bg-glass-200 border border-glass-300 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 required
               />
             </div>
