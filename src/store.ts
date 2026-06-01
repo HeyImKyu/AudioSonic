@@ -146,7 +146,7 @@ export const useStore = create<AudioSonicState>()(
         queueIndex: state.queueIndex > index ? state.queueIndex - 1 : state.queueIndex,
       })),
       clearQueue: () => set({ queue: [], queueIndex: 0 }),
-      setSidebarView: (view) => set({ sidebarView: view }),
+      setSidebarView: (view) => set({ sidebarView: view, currentCollection: null }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSettingsOpen: (open) => set({ settingsOpen: open }),
       setCollections: (collections) => set({ collections }),
