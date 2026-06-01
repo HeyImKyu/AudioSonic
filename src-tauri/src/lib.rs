@@ -218,9 +218,22 @@ async fn remove_from_collection(
     collection_id: String,
     library_item_id: String,
 ) -> Result<(), String> {
-    // TODO: Implement remove_from_collection in API client
-    // For now, return an error to indicate this isn't implemented yet
-    Err("remove_from_collection not yet implemented".to_string())
+    client
+        .remove_book_from_collection(&collection_id, &library_item_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_books_to_collection(
+    client: State<'_, ClientState>,
+    collection_id: String,
+    book_ids: Vec<String>,
+) -> Result<Collection, String> {
+    client
+        .add_books_to_collection(&collection_id, &book_ids)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -269,6 +282,7 @@ pub fn run() {
             get_audio_stream,
             add_to_collection,
             remove_from_collection,
+            add_books_to_collection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

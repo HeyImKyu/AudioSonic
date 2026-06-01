@@ -414,6 +414,52 @@ impl AudiobookshelfClient {
         Ok(collection)
     }
 
+    pub async fn remove_book_from_collection(&self, collection_id: &str, book_id: &str) -> Result<()> {
+        let base_url = self.get_base_url().await;
+        let headers = self.get_headers().await?;
+
+        let response = self.client
+            .delete(&format!("{}/api/collections/{}/book/{}", base_url, collection_id, book_id))
+            .headers(headers)
+            .send()
+            .await
+            .context("Failed to remove book from collection")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Failed to remove book from collection: {}", response.status()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn add_books_to_collection(&self, collection_id: &str, book_ids: &[String]) -> Result<Collection> {
+        let base_url = self.get_base_url().await;
+        let headers = self.get_headers().await?;
+
+        let request_body = serde_json::json!({
+            "books": book_ids
+        });
+
+        let response = self.client
+            .post(&format!("{}/api/collections/{}/batch/add", base_url, collection_id))
+            .headers(headers)
+            .json(&request_body)
+            .send()
+            .await
+            .context("Failed to add books to collection")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Failed to add books to collection: {}", response.status()));
+        }
+
+        let collection: Collection = response
+            .json()
+            .await
+            .context("Failed to parse collection response")?;
+
+        Ok(collection)
+    }
+
     pub async fn create_bookmark(
         &self,
         library_item_id: &str,

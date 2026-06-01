@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
-import { Book, Clock, PlayCircle, ArrowLeft, Edit2 } from 'lucide-react';
+import { Book, Clock, PlayCircle, ArrowLeft, Edit2, X, Plus } from 'lucide-react';
 import { LibraryItem, Collection } from '../types';
 
 export default function CollectionView() {
@@ -19,12 +19,16 @@ export default function CollectionView() {
     setCurrentTime, 
     setChapters,
     currentLibrary,
-    loadCollections
+    loadCollections,
+    currentLibraryItems
   } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
   const [showEditForm, setShowEditForm] = useState(false);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [showAddBooksForm, setShowAddBooksForm] = useState(false);
+  const [selectedBookIdsToAdd, setSelectedBookIdsToAdd] = useState<string[]>([]);
+  const [bookSearchQuery, setBookSearchQuery] = useState('');
 
   useEffect(() => {
     if (currentCollection?.books) {
@@ -60,6 +64,64 @@ export default function CollectionView() {
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert('Failed to update collection: ' + errorMessage);
     }
+  };
+
+  const handleRemoveBook = async (bookId: string) => {
+    if (!currentCollection) return;
+
+    try {
+      await invoke('remove_from_collection', {
+        collectionId: currentCollection.id,
+        libraryItemId: bookId
+      });
+      
+      // Update local collection state
+      setCurrentCollection({
+        ...currentCollection,
+        books: currentCollection.books.filter(b => b.id !== bookId)
+      });
+      
+      // Refresh collections list
+      if (currentLibrary) {
+        await loadCollections(currentLibrary.id);
+      }
+    } catch (error) {
+      console.error('Failed to remove book from collection:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert('Failed to remove book from collection: ' + errorMessage);
+    }
+  };
+
+  const handleAddBooks = async () => {
+    if (!currentCollection || selectedBookIdsToAdd.length === 0) return;
+
+    try {
+      const updated = await invoke<Collection>('add_books_to_collection', {
+        collectionId: currentCollection.id,
+        bookIds: selectedBookIdsToAdd
+      });
+      setCurrentCollection(updated);
+      setShowAddBooksForm(false);
+      setSelectedBookIdsToAdd([]);
+      setBookSearchQuery('');
+      
+      // Refresh collections list
+      if (currentLibrary) {
+        await loadCollections(currentLibrary.id);
+      }
+    } catch (error) {
+      console.error('Failed to add books to collection:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert('Failed to add books to collection: ' + errorMessage);
+    }
+  };
+
+  const toggleBookToAdd = (bookId: string) => {
+    setSelectedBookIdsToAdd(prev => 
+      prev.includes(bookId) 
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
   };
 
   const loadProgressForItems = async () => {
@@ -221,6 +283,13 @@ export default function CollectionView() {
           >
             <Edit2 className="w-5 h-5" />
           </button>
+          <button
+            onClick={() => setShowAddBooksForm(true)}
+            className="text-text-secondary hover:text-text transition p-1"
+            title="Add books to collection"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
         {currentCollection.description && (
           <p className="text-text-secondary mt-2">{currentCollection.description}</p>
@@ -280,6 +349,77 @@ export default function CollectionView() {
         </div>
       )}
 
+      {/* Add Books Form */}
+      {showAddBooksForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-lg p-6 w-96 max-w-full mx-4 max-h-[80vh] flex flex-col">
+            <h3 className="text-lg font-semibold text-text mb-4">Add Books to Collection</h3>
+            
+            <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+              <div>
+                <input
+                  type="text"
+                  value={bookSearchQuery}
+                  onChange={(e) => setBookSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+                  placeholder="Search books..."
+                />
+              </div>
+              
+              <div className="flex-1 overflow-y-auto border border-border rounded-lg bg-background">
+                {currentLibraryItems.length === 0 ? (
+                  <p className="p-4 text-text-secondary text-sm">No books available in library</p>
+                ) : (
+                  currentLibraryItems
+                    .filter(item => 
+                      !currentCollection?.books.some(b => b.id === item.id) &&
+                      (item.media.metadata.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
+                       item.media.metadata.authorName?.toLowerCase().includes(bookSearchQuery.toLowerCase()))
+                    )
+                    .map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center p-3 hover:bg-surface-hover cursor-pointer border-b border-border last:border-b-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedBookIdsToAdd.includes(item.id)}
+                          onChange={() => toggleBookToAdd(item.id)}
+                          className="mr-3 w-4 h-4 accent-primary"
+                        />
+                        <span className="text-sm text-text truncate">{item.media.metadata.title}</span>
+                      </label>
+                    ))
+                )}
+              </div>
+              <p className="text-xs text-text-secondary mt-1">
+                {selectedBookIdsToAdd.length} book{selectedBookIdsToAdd.length !== 1 ? 's' : ''} selected
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowAddBooksForm(false);
+                  setSelectedBookIdsToAdd([]);
+                  setBookSearchQuery('');
+                }}
+                className="px-4 py-2 text-text-secondary hover:text-text transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddBooks}
+                disabled={selectedBookIdsToAdd.length === 0}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Albums Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {currentCollection.books.map((item) => {
@@ -314,6 +454,18 @@ export default function CollectionView() {
                     <PlayCircle className="w-8 h-8 text-white" />
                   </div>
                 </div>
+
+                {/* Remove button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveBook(item.id);
+                  }}
+                  className="absolute top-2 right-2 w-8 h-8 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  title="Remove from collection"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
                 
                 {/* Progress bar */}
                 {itemProgress[item.id] && (
