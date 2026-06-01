@@ -20,8 +20,8 @@ export interface Theme {
 }
 
 const themes: Record<string, Theme> = {
-  psysonic: {
-    name: 'PsySonic',
+  readit: {
+    name: 'ReadIt',
     colors: {
       background: '#0a0a0a',
       surface: '#1a1a1a',
@@ -124,10 +124,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeName, setThemeName] = useState(() => {
     const saved = localStorage.getItem('audiosonic-theme');
-    return saved || 'psysonic';
+    return saved || 'readit';
   });
 
-  const currentTheme = themes[themeName] || themes.psysonic;
+  const currentTheme = themes[themeName] || themes.readit;
 
   const setTheme = (newThemeName: string) => {
     if (themes[newThemeName]) {

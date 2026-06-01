@@ -7,7 +7,7 @@ export default function ThemeSelector() {
   const [isOpen, setIsOpen] = useState(false);
 
   const themeIcons: Record<string, string> = {
-    psysonic: '🎧',
+    readit: '🎧',
     midnight: '🌙',
     nordic: '❄️',
     catppuccin: '🐱',
@@ -39,7 +39,7 @@ export default function ThemeSelector() {
             <div className="p-2">
               {availableThemes.map((theme) => {
                 const themeData = {
-                  psysonic: { name: 'PsySonic', icon: '🎧', desc: 'Dark with orange accents' },
+                  readit: { name: 'ReadIt', icon: '🎧', desc: 'Dark with orange accents' },
                   midnight: { name: 'Midnight', icon: '🌙', desc: 'Deep purple night theme' },
                   nordic: { name: 'Nordic', icon: '❄️', desc: 'Cool blue tones' },
                   catppuccin: { name: 'Catppuccin', icon: '🐱', desc: 'Warm pastel colors' },
