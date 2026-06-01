@@ -29,6 +29,7 @@ interface AudioSonicState {
   audioTracks: AudioTrack[];
   currentTrackIndex: number;
   chapters: Chapter[];
+  useRemainingTime: boolean;
   
   // Queue
   queue: LibraryItem[];
@@ -76,6 +77,7 @@ interface AudioSonicState {
   setCollectionsLoading: (loading: boolean) => void;
   loadCollections: (libraryId: string) => Promise<void>;
   logout: () => void;
+  setUseRemainingTime: (useRemainingTime: boolean) => void;
 }
 
 const initialState = {
@@ -106,6 +108,7 @@ const initialState = {
   sidebarView: 'library' as const,
   searchQuery: '',
   settingsOpen: false,
+  useRemainingTime: false,
 };
 
 export const useStore = create<AudioSonicState>()(
@@ -158,6 +161,7 @@ export const useStore = create<AudioSonicState>()(
         }
       },
       logout: () => set(initialState),
+      setUseRemainingTime: (useRemainingTime) => set({ useRemainingTime }),
     }),
     {
       name: 'audiosonic-storage',

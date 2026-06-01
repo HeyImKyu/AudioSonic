@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export default function Player() {
-  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters, setPlaybackSpeed } = useStore();
+  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters, setPlaybackSpeed, useRemainingTime, setUseRemainingTime } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isRestoringPositionRef = useRef(false);
@@ -339,7 +339,17 @@ export default function Player() {
           </div>
           <div className="flex justify-between text-xs text-text-secondary mt-1">
             <span>{formatTimeHHMMSS(currentTime)}</span>
-            <span>{formatTimeHHMMSS(duration)}</span>
+            
+            <button
+              onClick={() => useRemainingTime ? setUseRemainingTime(false) : setUseRemainingTime(true)}
+              className="flex items-center space-x-1 text-text-secondary hover:text-text transition-colors"
+            >
+              {useRemainingTime ? (
+                <span>-{formatTimeHHMMSS(duration - currentTime)}</span>
+              ) : (
+                <span>{formatTimeHHMMSS(duration)}</span>
+              )}
+            </button>
           </div>
         </div>
 
