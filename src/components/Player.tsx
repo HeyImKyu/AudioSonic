@@ -1,10 +1,10 @@
 import { useStore } from '../store';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal, RotateCcw, RotateCw } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal, RotateCcw, RotateCw, Timer } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export default function Player() {
-  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters } = useStore();
+  const { isPlaying, currentTime, duration, volume, audioUrl, playbackSpeed, audioTracks, currentTrackIndex, currentLibraryItem, setCurrentTrackIndex, setPlaying, setCurrentTime, setDuration, setVolume, serverUrl, chapters, setPlaybackSpeed } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isRestoringPositionRef = useRef(false);
@@ -271,7 +271,9 @@ export default function Player() {
     setPlaying(false);
   };
 
-  const [showMenu, setShowMenu] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+
+  const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
   const getCoverUrl = () => {
     if (currentLibraryItem?.media.coverPath && serverUrl) {
@@ -438,27 +440,37 @@ export default function Player() {
             </div>
             <div className="relative">
               <button 
-                onClick={() => setShowMenu(!showMenu)}
+                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface-hover rounded-lg"
               >
-                <MoreHorizontal className="w-5 h-5" />
+                <Timer className="w-5 h-5" />
               </button>
-              {showMenu && (
+              {showSpeedMenu && (
                 <>
                   <div 
                     className="fixed inset-0 z-10" 
-                    onClick={() => setShowMenu(false)}
+                    onClick={() => setShowSpeedMenu(false)}
                   />
-                  <div className="absolute bottom-full right-0 mb-2 bg-surface border border-border rounded-lg shadow-glass p-2 w-48 z-20">
-                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
-                      Playback Speed: {playbackSpeed}x
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
-                      Skip Silence
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-text hover:bg-surface-hover rounded transition text-sm">
-                      Audio Settings
-                    </button>
+                  <div className="absolute bottom-full right-0 mb-2 bg-surface border border-border rounded-lg shadow-glass p-2 w-32 z-20">
+                    {speedOptions.map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => {
+                          setPlaybackSpeed(speed);
+                          if (audioRef.current) {
+                            audioRef.current.playbackRate = speed;
+                          }
+                          setShowSpeedMenu(false);
+                        }}
+                        className={`w-full text-center px-3 py-2 rounded-lg transition text-sm ${
+                          playbackSpeed === speed 
+                            ? 'bg-primary/20 border border-primary/30 text-primary' 
+                            : 'text-text hover:bg-surface-hover'
+                        }`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
                   </div>
                 </>
               )}
