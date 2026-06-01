@@ -336,7 +336,56 @@ impl AudiobookshelfClient {
         Ok(playlists)
     }
 
-    pub async fn create_collection(&self, library_id: &str, name: &str, description: Option<&str>) -> Result<Collection> {
+    pub async fn create_collection(&self, library_id: &str, name: &str, description: Option<&str>, book_ids: &[String]) -> Result<Collection> {
+        let base_url = self.get_base_url().await;
+        let headers = self.get_headers().await?;
+
+        let request_body = serde_json::json!({
+            "libraryId": library_id,
+            "name": name,
+            "description": description,
+            "books": book_ids
+        });
+
+        let response = self.client
+            .post(&format!("{}/api/collections", base_url))
+            .headers(headers)
+            .json(&request_body)
+            .send()
+            .await
+            .context("Failed to create collection")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Failed to create collection: {}", response.status()));
+        }
+
+        let collection: Collection = response
+            .json()
+            .await
+            .context("Failed to parse collection response")?;
+
+        Ok(collection)
+    }
+
+    pub async fn delete_collection(&self, collection_id: &str) -> Result<()> {
+        let base_url = self.get_base_url().await;
+        let headers = self.get_headers().await?;
+
+        let response = self.client
+            .delete(&format!("{}/api/collections/{}", base_url, collection_id))
+            .headers(headers)
+            .send()
+            .await
+            .context("Failed to delete collection")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Failed to delete collection: {}", response.status()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_collection(&self, collection_id: &str, name: &str, description: Option<&str>) -> Result<Collection> {
         let base_url = self.get_base_url().await;
         let headers = self.get_headers().await?;
 
@@ -346,15 +395,15 @@ impl AudiobookshelfClient {
         });
 
         let response = self.client
-            .post(&format!("{}/api/libraries/{}/collections", base_url, library_id))
+            .patch(&format!("{}/api/collections/{}", base_url, collection_id))
             .headers(headers)
             .json(&request_body)
             .send()
             .await
-            .context("Failed to create collection")?;
+            .context("Failed to update collection")?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Failed to create collection: {}", response.status()));
+            return Err(anyhow::anyhow!("Failed to update collection: {}", response.status()));
         }
 
         let collection: Collection = response
