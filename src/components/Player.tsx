@@ -1,5 +1,5 @@
 import { useStore } from '../store';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, MoreHorizontal, RotateCcw, RotateCw, Timer } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw, RotateCw, Timer } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
