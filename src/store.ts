@@ -38,6 +38,7 @@ interface AudioSonicState {
   // Collections (server-side only)
   collections: Collection[];
   collectionsLoading: boolean;
+  currentCollection: Collection | null;
   
   // UI State
   sidebarView: 'library' | 'collections' | 'playlists' | 'search';
@@ -76,6 +77,7 @@ interface AudioSonicState {
   setCollections: (collections: Collection[]) => void;
   setCollectionsLoading: (loading: boolean) => void;
   loadCollections: (libraryId: string) => Promise<void>;
+  setCurrentCollection: (collection: Collection | null) => void;
   logout: () => void;
   setUseRemainingTime: (useRemainingTime: boolean) => void;
 }
@@ -105,6 +107,7 @@ const initialState = {
   queueIndex: 0,
   collections: [],
   collectionsLoading: false,
+  currentCollection: null,
   sidebarView: 'library' as const,
   searchQuery: '',
   settingsOpen: false,
@@ -143,11 +146,12 @@ export const useStore = create<AudioSonicState>()(
         queueIndex: state.queueIndex > index ? state.queueIndex - 1 : state.queueIndex,
       })),
       clearQueue: () => set({ queue: [], queueIndex: 0 }),
-      setSidebarView: (view) => set({ sidebarView: view }),
+      setSidebarView: (view) => set({ sidebarView: view, currentCollection: null }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSettingsOpen: (open) => set({ settingsOpen: open }),
       setCollections: (collections) => set({ collections }),
       setCollectionsLoading: (loading) => set({ collectionsLoading: loading }),
+      setCurrentCollection: (collection) => set({ currentCollection: collection }),
       loadCollections: async (libraryId) => {
         set({ collectionsLoading: true });
         try {

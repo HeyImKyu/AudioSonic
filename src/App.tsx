@@ -4,6 +4,7 @@ import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Library from './components/Library';
 import Collections from './components/Collections';
+import CollectionView from './components/CollectionView';
 import Player from './components/Player';
 import QueuePanel from './components/QueuePanel';
 import ThemeSelector from './components/ThemeSelector';
@@ -11,13 +12,18 @@ import Settings from './components/Settings';
 import './App.css';
 
 function App() {
-  const { isAuthenticated, sidebarView, settingsOpen, setSettingsOpen } = useStore();
+  const { isAuthenticated, sidebarView, settingsOpen, setSettingsOpen, currentCollection } = useStore();
 
   if (!isAuthenticated) {
     return <Login />;
   }
 
   const renderContent = () => {
+    // If viewing a specific collection, show CollectionView
+    if (currentCollection) {
+      return <CollectionView />;
+    }
+
     switch (sidebarView) {
       case 'library':
         return <Library />;
@@ -42,12 +48,14 @@ function App() {
     }
   };
 
-  const viewTitle = {
-    library: 'Library',
-    collections: 'Collections',
-    playlists: 'Playlists',
-    search: 'Search',
-  }[sidebarView] || 'Library';
+  const viewTitle = currentCollection 
+    ? currentCollection.name
+    : {
+        library: 'Library',
+        collections: 'Collections',
+        playlists: 'Playlists',
+        search: 'Search',
+      }[sidebarView] || 'Library';
 
   return (
     <ThemeProvider>
