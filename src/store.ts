@@ -46,6 +46,8 @@ interface AudioSonicState {
   settingsOpen: boolean;
   viewMode: 'grid' | 'list';
   zoomLevel: number;
+  sortBy: 'title' | 'year' | 'genre' | 'recent';
+  sortOrder: 'asc' | 'desc';
   
   // Actions
   setServerUrl: (url: string) => void;
@@ -85,6 +87,8 @@ interface AudioSonicState {
   setViewMode: (mode: 'grid' | 'list') => void;
   setZoomLevel: (level: number) => void;
   cycleZoomLevel: () => void;
+  setSortBy: (sortBy: 'title' | 'year' | 'genre' | 'recent') => void;
+  setSortOrder: (sortOrder: 'asc' | 'desc') => void;
 }
 
 const initialState = {
@@ -118,6 +122,8 @@ const initialState = {
   settingsOpen: false,
   viewMode: 'grid' as const,
   zoomLevel: 4,
+  sortBy: 'title' as const,
+  sortOrder: 'asc' as const,
   useRemainingTime: false,
 };
 
@@ -181,6 +187,8 @@ export const useStore = create<AudioSonicState>()(
         const nextIndex = (currentIndex + 1) % levels.length;
         return { zoomLevel: levels[nextIndex] };
       }),
+      setSortBy: (sortBy: 'title' | 'year' | 'genre' | 'recent') => set({ sortBy }),
+      setSortOrder: (sortOrder: 'asc' | 'desc') => set({ sortOrder }),
     }),
     {
       name: 'audiosonic-storage',

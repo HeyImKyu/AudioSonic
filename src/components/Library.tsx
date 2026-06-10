@@ -5,7 +5,7 @@ import { Book, Clock, PlayCircle, Plus, Minus } from 'lucide-react';
 import { LibraryItem } from '../types';
 
 export default function Library() {
-  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters, viewMode, setViewMode, zoomLevel, setZoomLevel, cycleZoomLevel } = useStore();
+  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters, viewMode, setViewMode, zoomLevel, setZoomLevel, cycleZoomLevel, sortBy, sortOrder, setSortBy, setSortOrder } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -191,22 +191,114 @@ export default function Library() {
     return null;
   };
 
+  const sortItems = (items: LibraryItem[]) => {
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'title':
+          comparison = a.media.metadata.title.localeCompare(b.media.metadata.title);
+          break;
+        case 'year':
+          const yearA = a.media.metadata.publishedYear || '0';
+          const yearB = b.media.metadata.publishedYear || '0';
+          comparison = yearA.localeCompare(yearB);
+          break;
+        case 'genre':
+          const genreA = (a.media.metadata.genres || [])[0] || '';
+          const genreB = (b.media.metadata.genres || [])[0] || '';
+          comparison = genreA.localeCompare(genreB);
+          break;
+        case 'recent':
+          const progressA = itemProgress[a.id];
+          const progressB = itemProgress[b.id];
+          const dateA = progressA?.lastUpdate || a.updatedAt || 0;
+          const dateB = progressB?.lastUpdate || b.updatedAt || 0;
+          comparison = dateA - dateB;
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    return sorted;
+  };
+
+  const sortedItems = sortItems(currentLibraryItems);
+
   return (
     <div>
       {/* Filter Bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <button className="px-4 py-2 bg-primary/20 text-primary rounded-lg border border-primary/30 hover:bg-primary/30 transition">
-            A-Z
+          <button
+            onClick={() => {
+              if (sortBy === 'title') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('title');
+                setSortOrder('asc');
+              }
+            }}
+            className={`px-4 py-2 rounded-lg border transition ${
+              sortBy === 'title'
+                ? 'bg-primary/20 text-primary border-primary/30'
+                : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+            }`}
+          >
+            A-Z {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
-          <button className="px-4 py-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition">
-            Year
+          <button
+            onClick={() => {
+              if (sortBy === 'year') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('year');
+                setSortOrder('asc');
+              }
+            }}
+            className={`px-4 py-2 rounded-lg border transition ${
+              sortBy === 'year'
+                ? 'bg-primary/20 text-primary border-primary/30'
+                : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+            }`}
+          >
+            Year {sortBy === 'year' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
-          <button className="px-4 py-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition">
-            Genre
+          <button
+            onClick={() => {
+              if (sortBy === 'genre') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('genre');
+                setSortOrder('asc');
+              }
+            }}
+            className={`px-4 py-2 rounded-lg border transition ${
+              sortBy === 'genre'
+                ? 'bg-primary/20 text-primary border-primary/30'
+                : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+            }`}
+          >
+            Genre {sortBy === 'genre' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
-          <button className="px-4 py-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition">
-            Recent
+          <button
+            onClick={() => {
+              if (sortBy === 'recent') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('recent');
+                setSortOrder('desc');
+              }
+            }}
+            className={`px-4 py-2 rounded-lg border transition ${
+              sortBy === 'recent'
+                ? 'bg-primary/20 text-primary border-primary/30'
+                : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+            }`}
+          >
+            Recent {sortBy === 'recent' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
         </div>
         <div className="flex items-center space-x-2">
@@ -255,7 +347,7 @@ export default function Library() {
       {/* Albums Grid */}
       {viewMode === 'grid' ? (
         <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${zoomLevel}, minmax(0, 1fr))` }}>
-        {currentLibraryItems.map((item) => {
+        {sortedItems.map((item) => {
           const coverUrl = getCoverUrl(item);
           return (
             <div
@@ -321,7 +413,7 @@ export default function Library() {
       ) : (
         /* List View */
         <div className="space-y-3">
-          {currentLibraryItems.map((item) => {
+          {sortedItems.map((item) => {
             const coverUrl = getCoverUrl(item);
             return (
               <div

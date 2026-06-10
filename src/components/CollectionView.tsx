@@ -24,7 +24,11 @@ export default function CollectionView() {
     viewMode,
     setViewMode,
     zoomLevel,
-    setZoomLevel
+    setZoomLevel,
+    sortBy,
+    sortOrder,
+    setSortBy,
+    setSortOrder
   } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
   const [showEditForm, setShowEditForm] = useState(false);
@@ -263,6 +267,42 @@ export default function CollectionView() {
     return null;
   };
 
+  const sortItems = (items: LibraryItem[]) => {
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'title':
+          comparison = a.media.metadata.title.localeCompare(b.media.metadata.title);
+          break;
+        case 'year':
+          const yearA = a.media.metadata.publishedYear || '0';
+          const yearB = b.media.metadata.publishedYear || '0';
+          comparison = yearA.localeCompare(yearB);
+          break;
+        case 'genre':
+          const genreA = (a.media.metadata.genres || [])[0] || '';
+          const genreB = (b.media.metadata.genres || [])[0] || '';
+          comparison = genreA.localeCompare(genreB);
+          break;
+        case 'recent':
+          const progressA = itemProgress[a.id];
+          const progressB = itemProgress[b.id];
+          const dateA = progressA?.lastUpdate || a.updatedAt || 0;
+          const dateB = progressB?.lastUpdate || b.updatedAt || 0;
+          comparison = dateA - dateB;
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    return sorted;
+  };
+
+  const sortedBooks = sortItems(currentCollection?.books || []);
+
   if (!currentCollection) {
     return null;
   }
@@ -321,22 +361,94 @@ export default function CollectionView() {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <h2 className="text-3xl font-bold text-text">{currentCollection.name}</h2>
-          <button
-            onClick={() => setShowEditForm(true)}
-            className="text-text-secondary hover:text-text transition p-1"
-            title="Edit collection"
-          >
-            <Edit2 className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setShowAddBooksForm(true)}
-            className="text-text-secondary hover:text-text transition p-1"
-            title="Add books to collection"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <h2 className="text-3xl font-bold text-text">{currentCollection.name}</h2>
+            <button
+              onClick={() => setShowEditForm(true)}
+              className="text-text-secondary hover:text-text transition p-1"
+              title="Edit collection"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowAddBooksForm(true)}
+              className="text-text-secondary hover:text-text transition p-1"
+              title="Add books to collection"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                if (sortBy === 'title') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('title');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'title'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              A-Z {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'year') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('year');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'year'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Year {sortBy === 'year' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'genre') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('genre');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'genre'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Genre {sortBy === 'genre' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'recent') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('recent');
+                  setSortOrder('desc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'recent'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Recent {sortBy === 'recent' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+          </div>
         </div>
         {currentCollection.description && (
           <p className="text-text-secondary mt-2">{currentCollection.description}</p>
@@ -470,7 +582,7 @@ export default function CollectionView() {
       {/* Albums Grid */}
       {viewMode === 'grid' ? (
         <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${zoomLevel}, minmax(0, 1fr))` }}>
-        {currentCollection.books.map((item) => {
+        {sortedBooks.map((item) => {
           const coverUrl = getCoverUrl(item);
           return (
             <div
@@ -548,7 +660,7 @@ export default function CollectionView() {
       ) : (
         /* List View */
         <div className="space-y-3">
-          {currentCollection.books.map((item) => {
+          {sortedBooks.map((item) => {
             const coverUrl = getCoverUrl(item);
             return (
               <div
