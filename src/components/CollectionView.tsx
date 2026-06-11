@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
-import { Book, Clock, PlayCircle, ArrowLeft, Edit2, X, Plus } from 'lucide-react';
+import { Book, Clock, PlayCircle, ArrowLeft, Edit2, X, Plus, Minus } from 'lucide-react';
 import { LibraryItem, Collection } from '../types';
 
 export default function CollectionView() {
@@ -20,7 +20,15 @@ export default function CollectionView() {
     setChapters,
     currentLibrary,
     loadCollections,
-    currentLibraryItems
+    currentLibraryItems,
+    viewMode,
+    setViewMode,
+    zoomLevel,
+    setZoomLevel,
+    sortBy,
+    sortOrder,
+    setSortBy,
+    setSortOrder
   } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
   const [showEditForm, setShowEditForm] = useState(false);
@@ -259,6 +267,42 @@ export default function CollectionView() {
     return null;
   };
 
+  const sortItems = (items: LibraryItem[]) => {
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'title':
+          comparison = a.media.metadata.title.localeCompare(b.media.metadata.title);
+          break;
+        case 'year':
+          const yearA = a.media.metadata.publishedYear || '0';
+          const yearB = b.media.metadata.publishedYear || '0';
+          comparison = yearA.localeCompare(yearB);
+          break;
+        case 'genre':
+          const genreA = (a.media.metadata.genres || [])[0] || '';
+          const genreB = (b.media.metadata.genres || [])[0] || '';
+          comparison = genreA.localeCompare(genreB);
+          break;
+        case 'recent':
+          const progressA = itemProgress[a.id];
+          const progressB = itemProgress[b.id];
+          const dateA = progressA?.lastUpdate || a.updatedAt || 0;
+          const dateB = progressB?.lastUpdate || b.updatedAt || 0;
+          comparison = dateA - dateB;
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    return sorted;
+  };
+
+  const sortedBooks = sortItems(currentCollection?.books || []);
+
   if (!currentCollection) {
     return null;
   }
@@ -267,29 +311,144 @@ export default function CollectionView() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => setCurrentCollection(null)}
-          className="flex items-center space-x-2 text-text-secondary hover:text-text transition mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Collections</span>
-        </button>
-        <div className="flex items-center space-x-3">
-          <h2 className="text-3xl font-bold text-text">{currentCollection.name}</h2>
+        <div className="flex items-center justify-between mb-4">
           <button
-            onClick={() => setShowEditForm(true)}
-            className="text-text-secondary hover:text-text transition p-1"
-            title="Edit collection"
+            onClick={() => setCurrentCollection(null)}
+            className="flex items-center space-x-2 text-text-secondary hover:text-text transition"
           >
-            <Edit2 className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Collections</span>
           </button>
-          <button
-            onClick={() => setShowAddBooksForm(true)}
-            className="text-text-secondary hover:text-text transition p-1"
-            title="Add books to collection"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition ${viewMode === 'list' ? 'text-primary bg-primary/20' : 'text-text-secondary hover:text-text hover:bg-surface-hover'}`}
+              title="List view"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition ${viewMode === 'grid' ? 'text-primary bg-primary/20' : 'text-text-secondary hover:text-text hover:bg-surface-hover'}`}
+              title="Grid view"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            {viewMode === 'grid' && (
+              <>
+                <div className="w-px h-6 bg-border mx-1" />
+                <button
+                  onClick={() => setZoomLevel(zoomLevel - 1)}
+                  disabled={zoomLevel <= 2}
+                  className="p-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Zoom out"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setZoomLevel(zoomLevel + 1)}
+                  disabled={zoomLevel >= 6}
+                  className="p-2 text-text-secondary hover:text-text hover:bg-surface-hover rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Zoom in"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <h2 className="text-3xl font-bold text-text">{currentCollection.name}</h2>
+            <button
+              onClick={() => setShowEditForm(true)}
+              className="text-text-secondary hover:text-text transition p-1"
+              title="Edit collection"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowAddBooksForm(true)}
+              className="text-text-secondary hover:text-text transition p-1"
+              title="Add books to collection"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                if (sortBy === 'title') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('title');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'title'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              A-Z {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'year') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('year');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'year'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Year {sortBy === 'year' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'genre') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('genre');
+                  setSortOrder('asc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'genre'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Genre {sortBy === 'genre' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => {
+                if (sortBy === 'recent') {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy('recent');
+                  setSortOrder('desc');
+                }
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                sortBy === 'recent'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'text-text-secondary border-transparent hover:text-text hover:bg-surface-hover'
+              }`}
+            >
+              Recent {sortBy === 'recent' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+          </div>
         </div>
         {currentCollection.description && (
           <p className="text-text-secondary mt-2">{currentCollection.description}</p>
@@ -421,8 +580,9 @@ export default function CollectionView() {
       )}
 
       {/* Albums Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {currentCollection.books.map((item) => {
+      {viewMode === 'grid' ? (
+        <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${zoomLevel}, minmax(0, 1fr))` }}>
+        {sortedBooks.map((item) => {
           const coverUrl = getCoverUrl(item);
           return (
             <div
@@ -496,7 +656,86 @@ export default function CollectionView() {
             </div>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        /* List View */
+        <div className="space-y-3">
+          {sortedBooks.map((item) => {
+            const coverUrl = getCoverUrl(item);
+            return (
+              <div
+                key={item.id}
+                className="group cursor-pointer flex items-center p-3 rounded-lg hover:bg-surface-hover transition"
+                onClick={() => handlePlayItem(item)}
+              >
+                <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-surface shadow-glass">
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt={item.media.metadata.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  
+                  {/* Fallback for missing cover */}
+                  <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 ${coverUrl ? 'hidden' : ''}`}>
+                    <Book className="w-8 h-8 text-primary/50" />
+                  </div>
+                  
+                  {/* Progress bar */}
+                  {itemProgress[item.id] && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+                      <div
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${itemProgress[item.id].progress * 100}%`,
+                          backgroundColor: itemProgress[item.id].isFinished ? '#22c55e' : '#eab308',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="ml-4 flex-1 min-w-0">
+                  <h3 className="text-text font-semibold truncate group-hover:text-primary transition-colors">
+                    {item.media.metadata.title}
+                  </h3>
+                  <p className="text-text-secondary text-sm truncate">
+                    {item.media.metadata.authorName}
+                  </p>
+                  <div className="flex items-center text-text-muted text-xs mt-1">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {formatDuration(item.media.duration)}
+                  </div>
+                </div>
+                
+                {/* Play button on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-10 h-10 bg-primary/90 rounded-full flex items-center justify-center">
+                    <PlayCircle className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                
+                {/* Remove button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveBook(item.id);
+                  }}
+                  className="ml-2 w-8 h-8 bg-red-500/90 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  title="Remove from collection"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Empty State */}
       {currentCollection.books.length === 0 && (
