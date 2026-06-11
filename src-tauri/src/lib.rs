@@ -112,9 +112,9 @@ async fn get_items_in_progress(client: State<'_, ClientState>) -> Result<Vec<Lib
 }
 
 #[tauri::command]
-async fn search(client: State<'_, ClientState>, query: String) -> Result<SearchResponse, String> {
+async fn search(client: State<'_, ClientState>, query: String, library_id: Option<String>) -> Result<SearchResponse, String> {
     client
-        .search(&query)
+        .search(&query, library_id.as_deref())
         .await
         .map_err(|e| e.to_string())
 }
@@ -203,9 +203,6 @@ async fn update_collection(
 
 #[tauri::command]
 async fn add_to_collection(
-    client: State<'_, ClientState>,
-    collection_id: String,
-    library_item_id: String,
 ) -> Result<(), String> {
     // TODO: Implement add_to_collection in API client
     // For now, return an error to indicate this isn't implemented yet
@@ -272,6 +269,7 @@ pub fn run() {
             update_progress,
             get_media_progress,
             get_items_in_progress,
+            search,
             get_collections,
             get_playlists,
             create_collection,

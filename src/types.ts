@@ -117,8 +117,15 @@ export interface PlayTrackMetadata {
   mimeType: string;
 }
 
+export interface SearchLibraryItem {
+  libraryItem: any;
+  matchKey?: string;
+  matchText?: string;
+}
+
 export interface SearchResponse {
-  book?: LibraryItem[];
+  book?: SearchLibraryItem[];
+  podcast?: SearchLibraryItem[];
   authors?: Author[];
   series?: Series[];
   tags?: string[];

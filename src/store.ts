@@ -44,6 +44,10 @@ interface AudioSonicState {
   sidebarView: 'library' | 'collections' | 'playlists' | 'search';
   searchQuery: string;
   settingsOpen: boolean;
+  viewMode: 'grid' | 'list';
+  zoomLevel: number;
+  sortBy: 'title' | 'year' | 'genre' | 'recent';
+  sortOrder: 'asc' | 'desc';
   
   // Actions
   setServerUrl: (url: string) => void;
@@ -80,6 +84,11 @@ interface AudioSonicState {
   setCurrentCollection: (collection: Collection | null) => void;
   logout: () => void;
   setUseRemainingTime: (useRemainingTime: boolean) => void;
+  setViewMode: (mode: 'grid' | 'list') => void;
+  setZoomLevel: (level: number) => void;
+  cycleZoomLevel: () => void;
+  setSortBy: (sortBy: 'title' | 'year' | 'genre' | 'recent') => void;
+  setSortOrder: (sortOrder: 'asc' | 'desc') => void;
 }
 
 const initialState = {
@@ -111,6 +120,10 @@ const initialState = {
   sidebarView: 'library' as const,
   searchQuery: '',
   settingsOpen: false,
+  viewMode: 'grid' as const,
+  zoomLevel: 4,
+  sortBy: 'title' as const,
+  sortOrder: 'asc' as const,
   useRemainingTime: false,
 };
 
@@ -166,10 +179,20 @@ export const useStore = create<AudioSonicState>()(
       },
       logout: () => set(initialState),
       setUseRemainingTime: (useRemainingTime) => set({ useRemainingTime }),
+      setViewMode: (mode: 'grid' | 'list') => set({ viewMode: mode }),
+      setZoomLevel: (level: number) => set({ zoomLevel: Math.max(2, Math.min(6, level)) }),
+      cycleZoomLevel: () => set((state: AudioSonicState) => {
+        const levels = [2, 3, 4, 5, 6];
+        const currentIndex = levels.indexOf(state.zoomLevel);
+        const nextIndex = (currentIndex + 1) % levels.length;
+        return { zoomLevel: levels[nextIndex] };
+      }),
+      setSortBy: (sortBy: 'title' | 'year' | 'genre' | 'recent') => set({ sortBy }),
+      setSortOrder: (sortOrder: 'asc' | 'desc') => set({ sortOrder }),
     }),
     {
       name: 'audiosonic-storage',
-      partialize: (state) => ({
+      partialize: (state: AudioSonicState) => ({
         serverUrl: state.serverUrl,
         token: state.token,
         user: state.user,
