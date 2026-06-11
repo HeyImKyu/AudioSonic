@@ -266,26 +266,36 @@ impl AudiobookshelfClient {
         Ok(items)
     }
 
-    pub async fn search(&self, query: &str) -> Result<SearchResponse> {
+    pub async fn search(&self, query: &str, library_id: Option<&str>) -> Result<SearchResponse> {
         let base_url = self.get_base_url().await;
         let headers = self.get_headers().await?;
 
+        let url = if let Some(lib_id) = library_id {
+            format!("{}/api/libraries/{}/search?q={}&limit=10", base_url, lib_id, query)
+        } else {
+            format!("{}/api/search?q={}&limit=10", base_url, query)
+        };
+
         let response = self.client
-            .get(&format!("{}/api/search", base_url))
+            .get(&url)
             .headers(headers)
-            .query(&[("q", query)])
             .send()
             .await
             .context("Failed to search")?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Search failed: {}", response.status()));
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_else(|_| "Unable to read error".to_string());
+            return Err(anyhow::anyhow!("Search failed: {} - {}", status, error_text));
         }
 
-        let search_response: SearchResponse = response
-            .json()
-            .await
-            .context("Failed to parse search response")?;
+        let response_text = response.text().await.context("Failed to read response text")?;
+        
+        // Log response size for debugging
+        eprintln!("Search response size: {} bytes", response_text.len());
+        
+        let search_response: SearchResponse = serde_json::from_str(&response_text)
+            .with_context(|| format!("Failed to parse search response. Response size: {} bytes", response_text.len()))?;
 
         Ok(search_response)
     }
