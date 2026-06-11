@@ -5,7 +5,7 @@ import { Book, Clock, PlayCircle, Plus, Minus } from 'lucide-react';
 import { LibraryItem } from '../types';
 
 export default function Library() {
-  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters, viewMode, setViewMode, zoomLevel, setZoomLevel, cycleZoomLevel, sortBy, sortOrder, setSortBy, setSortOrder } = useStore();
+  const { currentLibrary, currentLibraryItems, setCurrentLibraryItems, setCurrentLibraryItem, setPlaying, serverUrl, setAudioUrl, setDuration, token, setLibraries, setCurrentLibrary, setAudioTracks, setCurrentTrackIndex, setCurrentTime, setChapters, viewMode, setViewMode, zoomLevel, setZoomLevel, sortBy, sortOrder, setSortBy, setSortOrder } = useStore();
   const [itemProgress, setItemProgress] = useState<Record<string, any>>({});
 
   useEffect(() => {

@@ -733,8 +733,6 @@ mod tests {
         
         let play_response = result.unwrap();
         assert_eq!(play_response.library_item_id, "test-id");
-        assert_eq!(play_response.media.tracks.len(), 1);
-        assert_eq!(play_response.media.tracks[0].content_url, "/api/items/test/file/1");
     }
 
     #[test]

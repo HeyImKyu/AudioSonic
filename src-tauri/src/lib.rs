@@ -203,9 +203,6 @@ async fn update_collection(
 
 #[tauri::command]
 async fn add_to_collection(
-    client: State<'_, ClientState>,
-    collection_id: String,
-    library_item_id: String,
 ) -> Result<(), String> {
     // TODO: Implement add_to_collection in API client
     // For now, return an error to indicate this isn't implemented yet
