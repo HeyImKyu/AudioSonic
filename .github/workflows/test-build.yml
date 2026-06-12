@@ -28,9 +28,6 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-        
-    - name: Install Tauri CLI
-      run: cargo install tauri-cli --version "2.11.2"
       
     - name: Install Linux dependencies
       if: matrix.os == 'ubuntu-latest'
