@@ -33,7 +33,7 @@ jobs:
         toolchain: stable
         
     - name: Install Tauri CLI
-      run: cargo install tauri-cli --version "^2.0"
+      run: cargo install tauri-cli --version "2.0.3"
       
     - name: Install Linux dependencies
       if: matrix.os == 'ubuntu-latest'
