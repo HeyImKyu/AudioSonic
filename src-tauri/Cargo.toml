@@ -1,9 +1,9 @@
 [package]
 name = "audiosonic"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-edition = "2021"
+version = "1.1.0"
+description = "AudioSonic - A modern audio book player"
+authors = ["heyimkyu"]
+edition = "2026"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
