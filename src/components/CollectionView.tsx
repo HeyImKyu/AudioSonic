@@ -150,48 +150,35 @@ export default function CollectionView() {
   };
 
   const handlePlayItem = async (item: LibraryItem) => {
-    console.log('handlePlayItem called with item:', item);
     try {
       setCurrentLibraryItem(item);
-      
+
       // Load saved progress from server
       let savedProgress: any = null;
       try {
         savedProgress = await invoke('get_media_progress', { libraryItemId: item.id });
-        console.log('Saved progress:', savedProgress);
       } catch (error) {
         console.error('Failed to load saved progress:', error);
       }
-      
+
       const response = await invoke('play_item', { libraryItemId: item.id, episodeId: null }) as any;
-      console.log('Play response:', response);
-      console.log('Response chapters:', response.chapters);
-      console.log('Response audioTracks:', response.audioTracks);
-      console.log('All response keys:', Object.keys(response));
-      
+
       // Store chapters if available
       if (response.chapters && response.chapters.length > 0) {
-        console.log('Chapters found:', response.chapters);
         setChapters(response.chapters);
       } else {
-        console.log('No chapters found, will use audio tracks');
         setChapters([]);
       }
-      
+
       // Handle audioTracks field
       if (response.audioTracks && response.audioTracks.length > 0) {
         const firstTrack = response.audioTracks[0];
-        console.log('Content URL:', firstTrack.contentUrl);
-        console.log('Server URL:', serverUrl);
-        console.log('Token:', token);
-        console.log('Total audio tracks:', response.audioTracks.length);
-        
+
         // Store all audio tracks
         setAudioTracks(response.audioTracks);
-        
+
         // Calculate total duration from all tracks
         const totalDuration = response.audioTracks.reduce((sum: number, track: any) => sum + track.duration, 0);
-        console.log('Total duration:', totalDuration);
         setDuration(totalDuration);
         
         // Set currentTime to saved progress if available

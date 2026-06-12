@@ -4,10 +4,8 @@ import { Plus, X, Book, ArrowRight } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Collections() {
-  console.log('Collections component rendering');
-  
-  const { 
-    collections, 
+  const {
+    collections,
     collectionsLoading,
     currentLibrary,
     currentLibraryItems,
@@ -23,12 +21,8 @@ export default function Collections() {
   const [bookSearchQuery, setBookSearchQuery] = useState('');
 
   useEffect(() => {
-    console.log('Collections useEffect - currentLibrary:', currentLibrary);
     if (currentLibrary) {
-      console.log('Loading collections for library:', currentLibrary.id);
       loadCollections(currentLibrary.id);
-    } else {
-      console.log('No currentLibrary, not loading collections');
     }
   }, [currentLibrary, loadCollections]);
 
@@ -39,14 +33,12 @@ export default function Collections() {
     }
 
     try {
-      console.log('Creating collection...', { name: newCollectionName.trim(), description: newCollectionDescription.trim(), bookIds: selectedBookIds });
-      await invoke('create_collection', { 
+      await invoke('create_collection', {
         libraryId: currentLibrary.id,
         name: newCollectionName.trim(),
         description: newCollectionDescription.trim() || null,
         bookIds: selectedBookIds
       });
-      console.log('Collection created successfully');
       
       // Refresh collections from server
       await loadCollections(currentLibrary.id);
@@ -74,10 +66,8 @@ export default function Collections() {
   const handleRemoveCollection = async (id: string) => {
     if (confirm('Are you sure you want to delete this collection?')) {
       try {
-        console.log('Deleting collection...', id);
         await invoke('delete_collection', { collectionId: id });
-        console.log('Collection deleted:', id);
-        
+
         // Refresh collections from server
         if (currentLibrary) {
           await loadCollections(currentLibrary.id);
@@ -99,13 +89,6 @@ export default function Collections() {
   const handleCollectionClick = (collection: any) => {
     setCurrentCollection(collection);
   };
-
-  console.log('Collections render state:', { 
-    collections, 
-    collectionsLoading, 
-    currentLibrary, 
-    collectionsLength: collections?.length 
-  });
 
   return (
     <div className="p-6">

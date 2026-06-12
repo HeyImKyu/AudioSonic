@@ -48,17 +48,6 @@ async fn get_library_items(
 }
 
 #[tauri::command]
-async fn get_library_item(
-    client: State<'_, ClientState>,
-    library_item_id: String,
-) -> Result<LibraryItem, String> {
-    client
-        .get_library_item(&library_item_id)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 async fn play_item(
     client: State<'_, ClientState>,
     library_item_id: String,
@@ -125,42 +114,6 @@ async fn get_collections(
     library_id: String,
 ) -> Result<Vec<Collection>, String> {
     client.get_collections(&library_id).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn get_playlists(
-    client: State<'_, ClientState>,
-    library_id: String,
-) -> Result<Vec<Playlist>, String> {
-    client
-        .get_playlists(&library_id)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn create_bookmark(
-    client: State<'_, ClientState>,
-    library_item_id: String,
-    time: f64,
-    title: String,
-) -> Result<Bookmark, String> {
-    let request = CreateBookmarkRequest { time, title };
-    client
-        .create_bookmark(&library_item_id, request)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn get_cover_url(
-    client: State<'_, ClientState>,
-    library_item_id: String,
-) -> Result<String, String> {
-    client
-        .get_cover_url(&library_item_id)
-        .await
-        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -233,24 +186,6 @@ async fn add_books_to_collection(
         .map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-async fn get_audio_stream(
-    client: State<'_, ClientState>,
-    library_item_id: String,
-    episode_id: Option<String>,
-) -> Result<String, String> {
-    let play_response = client
-        .play_item(&library_item_id, episode_id.as_deref())
-        .await
-        .map_err(|e| e.to_string())?;
-    
-    if let Some(track) = play_response.audio_tracks.first() {
-        return Ok(track.content_url.clone());
-    }
-    
-    Err("No tracks in play response".to_string())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let client = Arc::new(AudiobookshelfClient::new());
@@ -264,20 +199,15 @@ pub fn run() {
             login,
             get_libraries,
             get_library_items,
-            get_library_item,
             play_item,
             update_progress,
             get_media_progress,
             get_items_in_progress,
             search,
             get_collections,
-            get_playlists,
             create_collection,
             delete_collection,
             update_collection,
-            create_bookmark,
-            get_cover_url,
-            get_audio_stream,
             add_to_collection,
             remove_from_collection,
             add_books_to_collection,

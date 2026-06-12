@@ -71,9 +71,8 @@ export default function QueuePanel() {
     }
   };
 
-  const handleRemoveFromQueue = (index: number) => {
+  const handleRemoveFromQueue = (_index: number) => {
     // This would need to be implemented in the store
-    console.log('Remove track from queue:', index);
   };
 
   const formatTime = (seconds: number) => {

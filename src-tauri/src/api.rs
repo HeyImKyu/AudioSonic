@@ -122,30 +122,6 @@ impl AudiobookshelfClient {
         Ok(items_response.results)
     }
 
-    pub async fn get_library_item(&self, library_item_id: &str) -> Result<LibraryItem> {
-        let base_url = self.get_base_url().await;
-        let headers = self.get_headers().await?;
-
-        let response = self.client
-            .get(&format!("{}/api/items/{}", base_url, library_item_id))
-            .headers(headers)
-            .query(&[("minified", "false")])
-            .send()
-            .await
-            .context("Failed to fetch library item")?;
-
-        if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Failed to get library item: {}", response.status()));
-        }
-
-        let item: LibraryItem = response
-            .json()
-            .await
-            .context("Failed to parse library item response")?;
-
-        Ok(item)
-    }
-
     pub async fn play_item(&self, library_item_id: &str, episode_id: Option<&str>) -> Result<PlayResponse> {
         let url = if let Some(ep_id) = episode_id {
             format!("{}/api/items/{}/play/{}", self.base_url.read().await, library_item_id, ep_id)
@@ -323,29 +299,6 @@ impl AudiobookshelfClient {
         Ok(collections_response.results)
     }
 
-    pub async fn get_playlists(&self, library_id: &str) -> Result<Vec<Playlist>> {
-        let base_url = self.get_base_url().await;
-        let headers = self.get_headers().await?;
-
-        let response = self.client
-            .get(&format!("{}/api/libraries/{}/playlists", base_url, library_id))
-            .headers(headers)
-            .send()
-            .await
-            .context("Failed to fetch playlists")?;
-
-        if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Failed to get playlists: {}", response.status()));
-        }
-
-        let playlists: Vec<Playlist> = response
-            .json()
-            .await
-            .context("Failed to parse playlists response")?;
-
-        Ok(playlists)
-    }
-
     pub async fn create_collection(&self, library_id: &str, name: &str, description: Option<&str>, book_ids: &[String]) -> Result<Collection> {
         let base_url = self.get_base_url().await;
         let headers = self.get_headers().await?;
@@ -468,49 +421,5 @@ impl AudiobookshelfClient {
             .context("Failed to parse collection response")?;
 
         Ok(collection)
-    }
-
-    pub async fn create_bookmark(
-        &self,
-        library_item_id: &str,
-        bookmark: CreateBookmarkRequest,
-    ) -> Result<Bookmark> {
-        let base_url = self.get_base_url().await;
-        let headers = self.get_headers().await?;
-
-        let response = self.client
-            .post(&format!("{}/api/me/bookmark/{}", base_url, library_item_id))
-            .headers(headers)
-            .json(&bookmark)
-            .send()
-            .await
-            .context("Failed to create bookmark")?;
-
-        if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Failed to create bookmark: {}", response.status()));
-        }
-
-        let bookmark_response: Bookmark = response
-            .json()
-            .await
-            .context("Failed to parse bookmark response")?;
-
-        Ok(bookmark_response)
-    }
-
-    pub async fn get_cover_url(&self, library_item_id: &str) -> Result<String> {
-        let base_url = self.get_base_url().await;
-        let token = self.token.read().await;
-        
-        if let Some(t) = token.as_ref() {
-            Ok(format!(
-                "{}/api/items/{}/cover?token={}",
-                base_url,
-                library_item_id,
-                t
-            ))
-        } else {
-            Ok(format!("{}/api/items/{}/cover", base_url, library_item_id))
-        }
     }
 }
