@@ -33,6 +33,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
+    - name: Initialize Android project
+      run: npm run tauri android init
+    
     - name: Build Android APK
       run: npm run tauri android build
       

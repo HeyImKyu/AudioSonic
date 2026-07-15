@@ -51,6 +51,10 @@ jobs:
       if: matrix.target == 'android'
       uses: android-actions/setup-android@v3
     
+    - name: Initialize Android project
+      if: matrix.target == 'android'
+      run: npm run tauri android init
+    
     - name: Build application
       if: matrix.target != 'android'
       run: npm run tauri build
