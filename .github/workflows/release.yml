@@ -12,6 +12,9 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: android
     runs-on: ${{ matrix.os }}
     
     steps:
@@ -33,19 +36,34 @@ jobs:
         toolchain: stable
       
     - name: Install Linux dependencies
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && matrix.target != 'android'
       run: |
         sudo apt-get update
         sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
-      
+    
+    - name: Install Android dependencies
+      if: matrix.target == 'android'
+      run: |
+        sudo apt-get update
+        sudo apt install -y openjdk-17-jdk
+    
+    - name: Setup Android SDK
+      if: matrix.target == 'android'
+      uses: android-actions/setup-android@v3
+    
     - name: Build application
+      if: matrix.target != 'android'
       run: npm run tauri build
+    
+    - name: Build Android APK
+      if: matrix.target == 'android'
+      run: npm run tauri android build
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: artifacts-${{ matrix.os }}
-        path: src-tauri/target/release/bundle
+        name: artifacts-${{ matrix.os }}${{ matrix.target == 'android' && '-android' || '' }}
+        path: ${{ matrix.target == 'android' && 'src-tauri/gen/android/app/build/outputs/apk' || 'src-tauri/target/release/bundle' }}
         
   create-release:
     needs: release
@@ -78,5 +96,6 @@ jobs:
           artifacts/**/*.deb
           artifacts/**/*.AppImage
           artifacts/**/*.dmg
+          artifacts/**/*.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
