@@ -11,8 +11,13 @@ jobs:
     if: ${{ (github.event.pull_request.merged == true && !(contains(github.event.pull_request.labels.*.name, 'minor')) && !(contains(github.event.pull_request.labels.*.name, 'dependencies'))) || github.event_name == 'workflow_dispatch' }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
+          - os: windows-latest
+            target: desktop
+          - os: ubuntu-latest
+            target: desktop
+          - os: macos-latest
+            target: desktop
           - os: ubuntu-latest
             target: android
     runs-on: ${{ matrix.os }}
@@ -58,6 +63,14 @@ jobs:
     - name: Build application
       if: matrix.target != 'android'
       run: npm run tauri build
+    
+    - name: List build outputs
+      if: matrix.target != 'android'
+      run: |
+        echo "Build outputs:"
+        ls -la src-tauri/target/release/bundle/ || echo "Bundle directory not found"
+        echo "Target directory:"
+        ls -la src-tauri/target/release/ || echo "Release directory not found"
     
     - name: Build Android APK
       if: matrix.target == 'android'
