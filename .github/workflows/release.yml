@@ -74,13 +74,13 @@ jobs:
     
     - name: Build Android APK
       if: matrix.target == 'android'
-      run: npm run tauri android build
+      run: npm run tauri android build --debug
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
         name: artifacts-${{ matrix.os }}${{ matrix.target == 'android' && '-android' || '' }}
-        path: ${{ matrix.target == 'android' && 'src-tauri/gen/android/app/build/outputs/apk' || 'src-tauri/target/release/bundle' }}
+        path: ${{ matrix.target == 'android' && 'src-tauri/gen/android/app/build/outputs/apk/debug' || 'src-tauri/target/release/bundle' }}
         
   create-release:
     needs: release

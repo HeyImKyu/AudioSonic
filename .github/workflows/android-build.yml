@@ -37,10 +37,10 @@ jobs:
       run: npm run tauri android init
     
     - name: Build Android APK
-      run: npm run tauri android build
+      run: npm run tauri android build --debug
       
     - name: Upload Android artifacts
       uses: actions/upload-artifact@v7
       with:
         name: android-apk
-        path: src-tauri/gen/android/app/build/outputs/apk
+        path: src-tauri/gen/android/app/build/outputs/apk/debug
