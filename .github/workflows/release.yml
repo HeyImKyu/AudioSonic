@@ -66,6 +66,7 @@ jobs:
     
     - name: List build outputs
       if: matrix.target != 'android'
+      shell: bash
       run: |
         echo "Build outputs:"
         ls -la src-tauri/target/release/bundle/ || echo "Bundle directory not found"
