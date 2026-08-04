@@ -39,15 +39,18 @@ jobs:
     - name: Build Android APK
       run: npm run tauri android build --debug
 
-    - name: Verify universal debug APK
+    - name: Verify generated APKs
       shell: bash
       run: |
-        ls -la src-tauri/gen/android/app/build/outputs/apk/debug || true
-        ls -la src-tauri/gen/android/app/build/outputs/apk/universal/debug || true
-        test -f src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+        if [ ! -d "src-tauri/gen/android" ]; then
+          echo "Android project directory not found."
+          exit 1
+        fi
+        find src-tauri/gen/android -type f -name "*.apk" -print
+        test -n "$(find src-tauri/gen/android -type f -name "*.apk" -print -quit)"
       
     - name: Upload Android artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: android-apk-universal-debug
-        path: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+        name: android-apk
+        path: src-tauri/gen/android/**/outputs/**/*.apk
