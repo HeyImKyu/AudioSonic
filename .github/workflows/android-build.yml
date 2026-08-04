@@ -24,6 +24,9 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
+
+    - name: Install Rust Android targets
+      run: rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
     
     - name: Install Android dependencies
       run: |
@@ -32,6 +35,23 @@ jobs:
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Create Android debug keystore
+      shell: bash
+      run: |
+        mkdir -p ~/.android
+        if [ ! -f ~/.android/debug.keystore ]; then
+          keytool -genkeypair -v \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+          echo "Debug keystore created."
+        else
+          echo "Debug keystore already exists."
+        fi
     
     - name: Initialize Android project
       run: npm run tauri android init
@@ -39,15 +59,17 @@ jobs:
     - name: Build Android APK
       run: npm run tauri android build --debug
 
-    - name: Verify generated APKs
+    - name: Verify APK is signed
       shell: bash
       run: |
-        if [ ! -d "src-tauri/gen/android" ]; then
-          echo "Android project directory not found."
+        APK=$(find src-tauri/gen/android -name "*.apk" -print -quit)
+        if [ -z "$APK" ]; then
+          echo "No APK found after build."
           exit 1
         fi
-        find src-tauri/gen/android -type f -name "*.apk" -print
-        test -n "$(find src-tauri/gen/android -type f -name "*.apk" -print -quit)"
+        echo "Found APK: $APK"
+        APKSIGNER=$(find "${ANDROID_SDK_ROOT}/build-tools" -name "apksigner" | sort | tail -1)
+        "$APKSIGNER" verify --verbose "$APK"
       
     - name: Upload Android artifacts
       uses: actions/upload-artifact@v7
