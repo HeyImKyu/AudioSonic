@@ -54,12 +54,13 @@ jobs:
         fi
     
     - name: Initialize Android project
-      run: npm run tauri android init
+      run: npm run tauri -- android init
     
     - name: Build Android APK
-      run: npm run tauri android build --debug
+      # Use -- to pass flags through npm to tauri; without it npm intercepts --debug
+      run: npm run tauri -- android build --debug
 
-    - name: Verify APK is signed
+    - name: Sign APK if unsigned
       shell: bash
       run: |
         APK=$(find src-tauri/gen/android -name "*.apk" -print -quit)
@@ -69,10 +70,34 @@ jobs:
         fi
         echo "Found APK: $APK"
         APKSIGNER=$(find "${ANDROID_SDK_ROOT}/build-tools" -name "apksigner" | sort | tail -1)
-        "$APKSIGNER" verify --verbose "$APK"
+        ZIPALIGN=$(find "${ANDROID_SDK_ROOT}/build-tools" -name "zipalign" | sort | tail -1)
+
+        # Check if already signed
+        if "$APKSIGNER" verify "$APK" 2>/dev/null; then
+          echo "APK is already signed."
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
+        else
+          echo "APK is unsigned, signing now..."
+          keytool -genkeypair -v \
+            -keystore /tmp/ci-key.jks \
+            -storepass android -alias androidkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=CI Build,O=CI,C=US"
+          ALIGNED_APK="${APK/-unsigned/}"
+          if [ "$ALIGNED_APK" = "$APK" ]; then
+            ALIGNED_APK="${APK%.apk}-aligned.apk"
+          fi
+          "$ZIPALIGN" -v 4 "$APK" "$ALIGNED_APK"
+          "$APKSIGNER" sign \
+            --ks /tmp/ci-key.jks --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias androidkey \
+            "$ALIGNED_APK"
+          "$APKSIGNER" verify --verbose "$ALIGNED_APK"
+          echo "APK_PATH=$ALIGNED_APK" >> "$GITHUB_ENV"
+        fi
       
     - name: Upload Android artifacts
       uses: actions/upload-artifact@v7
       with:
         name: android-apk
-        path: src-tauri/gen/android/**/outputs/**/*.apk
+        path: ${{ env.APK_PATH }}
