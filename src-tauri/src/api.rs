@@ -2,6 +2,7 @@ use crate::models::*;
 use anyhow::{Context, Result};
 use reqwest::{Client, header};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::RwLock;
 
 pub struct AudiobookshelfClient {
@@ -13,7 +14,12 @@ pub struct AudiobookshelfClient {
 impl AudiobookshelfClient {
     pub fn new() -> Self {
         Self {
-            client: Client::new(),
+            client: Client::builder()
+                // Prevent requests from hanging forever if the server is unreachable
+                .connect_timeout(Duration::from_secs(15))
+                .timeout(Duration::from_secs(30))
+                .build()
+                .unwrap_or_default(),
             base_url: Arc::new(RwLock::new(String::new())),
             token: Arc::new(RwLock::new(None)),
         }

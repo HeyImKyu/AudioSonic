@@ -188,6 +188,11 @@ async fn add_books_to_collection(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Both `ring` and `aws-lc-rs` end up linked in (reqwest 0.13 defaults to aws-lc-rs while
+    // tauri-plugin-http's reqwest 0.12 defaults to ring). Without an explicit default, rustls
+    // panics on the first TLS handshake, which silently hangs any async command that hits it.
+    let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+
     let client = Arc::new(AudiobookshelfClient::new());
 
     tauri::Builder::default()
