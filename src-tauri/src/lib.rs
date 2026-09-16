@@ -2,8 +2,11 @@ mod api;
 mod models;
 
 use api::AudiobookshelfClient;
+use futures::FutureExt;
 use models::*;
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::State;
 
 type ClientState = Arc<AudiobookshelfClient>;
@@ -25,10 +28,13 @@ async fn login(
     password: String,
     url: String,
 ) -> Result<LoginResponse, String> {
-    client
-        .login(&username, &password, &url)
-        .await
-        .map_err(|e| e.to_string())
+    let login = AssertUnwindSafe(client.login(&username, &password, &url)).catch_unwind();
+
+    match tokio::time::timeout(Duration::from_secs(35), login).await {
+        Ok(Ok(result)) => result.map_err(|error| error.to_string()),
+        Ok(Err(_)) => Err("The native HTTPS client crashed while connecting".to_string()),
+        Err(_) => Err("Connection timed out after 35 seconds".to_string()),
+    }
 }
 
 #[tauri::command]
@@ -188,10 +194,7 @@ async fn add_books_to_collection(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Both `ring` and `aws-lc-rs` end up linked in (reqwest 0.13 defaults to aws-lc-rs while
-    // tauri-plugin-http's reqwest 0.12 defaults to ring). Without an explicit default, rustls
-    // panics on the first TLS handshake, which silently hangs any async command that hits it.
-    let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+    let _ = rustls::crypto::ring::default_provider().install_default();
 
     let client = Arc::new(AudiobookshelfClient::new());
 

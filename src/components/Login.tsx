@@ -3,6 +3,15 @@ import { invoke } from '@tauri-apps/api/core';
 import { useStore } from '../store';
 import { Lock, Server } from 'lucide-react';
 
+const LOGIN_TIMEOUT_MS = 40_000;
+
+const timeout = (milliseconds: number) => new Promise<never>((_, reject) => {
+  window.setTimeout(
+    () => reject(new Error('The Android native login service did not respond. Please verify the server URL and try again.')),
+    milliseconds,
+  );
+});
+
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,10 +27,13 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await invoke('login', { username, password, url });
+      const response = await Promise.race([
+        invoke('login', { username, password, url: url.trim() }),
+        timeout(LOGIN_TIMEOUT_MS),
+      ]);
       const loginResponse = response as any;
       
-      setServerUrl(url);
+      setServerUrl(url.trim());
       setToken(loginResponse.user.token || null);
       setUser(loginResponse.user);
       setAuthenticated(true);
